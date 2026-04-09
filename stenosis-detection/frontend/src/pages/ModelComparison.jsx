@@ -39,8 +39,8 @@ export default function ModelComparison() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-medical-400 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-400">Loading model comparison data...</p>
+          <div className="w-12 h-12 border-4 border-apple-accent border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-apple-secondary">Loading model comparison data...</p>
         </div>
       </div>
     );
@@ -66,19 +66,19 @@ export default function ModelComparison() {
   const MetricCard = ({ icon: Icon, title, value, best, label }) => (
     <motion.div
       whileHover={{ scale: 1.02 }}
-      className="glass-card rounded-xl p-4 glass-card-hover"
+      className="card rounded-xl p-4 spring-hover"
     >
       <div className="flex items-center justify-between mb-2">
-        <Icon className="w-5 h-5 text-medical-400" />
+        <Icon className="w-5 h-5 text-apple-accent" />
         {value === best && (
-          <span className="text-xs px-2 py-0.5 rounded-full bg-medical-500/20 text-medical-400">
+          <span className="text-xs px-2 py-0.5 rounded-full bg-apple-accent/10 text-apple-accent border border-apple-accent/30">
             Best
           </span>
         )}
       </div>
-      <p className="text-2xl font-bold gradient-text">{value}</p>
-      <p className="text-sm text-gray-400">{title}</p>
-      <p className="text-xs text-medical-400 mt-1">{label}</p>
+      <p className="text-2xl font-semibold" style={{ color: '#0071E3' }}>{value}</p>
+      <p className="text-sm text-apple-secondary">{title}</p>
+      <p className="text-xs text-apple-tertiary mt-1">{label}</p>
     </motion.div>
   );
 
@@ -95,22 +95,22 @@ export default function ModelComparison() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-8"
         >
-          <h1 className="text-4xl font-bold text-white mb-2">
-            <span className="gradient-text">Model Comparison</span>
+          <h1 className="text-4xl font-semibold mb-2 tracking-tight" style={{ color: '#1D1D1F' }}>
+            Model Comparison
           </h1>
-          <p className="text-gray-400">
+          <p className="text-apple-secondary">
             Performance metrics across YOLOv8 detection and segmentation models
           </p>
         </motion.div>
 
         <div className="flex justify-center mb-8">
-          <div className="glass-card rounded-xl p-1 inline-flex">
+          <div className="card rounded-xl p-1 inline-flex">
             <button
               onClick={() => setViewType('detection')}
               className={`px-6 py-3 rounded-lg font-medium transition-all ${
                 viewType === 'detection'
-                  ? 'bg-medical-600/30 text-medical-400'
-                  : 'text-gray-400 hover:text-white'
+                  ? 'bg-apple-accent text-white'
+                  : 'text-apple-secondary hover:text-apple-text'
               }`}
             >
               Detection Models
@@ -119,8 +119,8 @@ export default function ModelComparison() {
               onClick={() => setViewType('segmentation')}
               className={`px-6 py-3 rounded-lg font-medium transition-all ${
                 viewType === 'segmentation'
-                  ? 'bg-medical-600/30 text-medical-400'
-                  : 'text-gray-400 hover:text-white'
+                  ? 'bg-apple-accent text-white'
+                  : 'text-apple-secondary hover:text-apple-text'
               }`}
             >
               Segmentation Models
@@ -165,28 +165,22 @@ export default function ModelComparison() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="glass-card rounded-2xl p-6"
+            className="card rounded-2xl p-6"
           >
-            <h3 className="text-lg font-semibold text-white mb-4">mAP50 Comparison</h3>
+            <h3 className="text-lg font-medium mb-4" style={{ color: '#1D1D1F' }}>mAP50 Comparison</h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis dataKey="name" stroke="#9ca3af" />
-                <YAxis stroke="#9ca3af" domain={[0, 100]} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#D2D2D7" />
+                <XAxis dataKey="name" stroke="#6E6E73" />
+                <YAxis stroke="#6E6E73" domain={[0, 100]} />
                 <Tooltip
                   contentStyle={{
-                    background: 'rgba(20, 20, 30, 0.9)',
-                    border: '1px solid rgba(255,255,255,0.1)',
+                    background: '#FFFFFF',
+                    border: '1px solid #D2D2D7',
                     borderRadius: '8px',
                   }}
                 />
-                <Bar dataKey="mAP50" fill="url(#colorMap)" radius={[4, 4, 0, 0]} />
-                <defs>
-                  <linearGradient id="colorMap" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#0ea5e9" />
-                    <stop offset="100%" stopColor="#0284c7" />
-                  </linearGradient>
-                </defs>
+                <Bar dataKey="mAP50" fill="#0071E3" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </motion.div>
@@ -195,24 +189,24 @@ export default function ModelComparison() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="glass-card rounded-2xl p-6"
+            className="card rounded-2xl p-6"
           >
-            <h3 className="text-lg font-semibold text-white mb-4">Precision vs Recall</h3>
+            <h3 className="text-lg font-medium mb-4" style={{ color: '#1D1D1F' }}>Precision vs Recall</h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis dataKey="name" stroke="#9ca3af" />
-                <YAxis stroke="#9ca3af" domain={[0, 100]} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#D2D2D7" />
+                <XAxis dataKey="name" stroke="#6E6E73" />
+                <YAxis stroke="#6E6E73" domain={[0, 100]} />
                 <Tooltip
                   contentStyle={{
-                    background: 'rgba(20, 20, 30, 0.9)',
-                    border: '1px solid rgba(255,255,255,0.1)',
+                    background: '#FFFFFF',
+                    border: '1px solid #D2D2D7',
                     borderRadius: '8px',
                   }}
                 />
                 <Legend />
-                <Bar dataKey="precision" fill="#0ea5e9" radius={[4, 4, 0, 0]} name="Precision" />
-                <Bar dataKey="recall" fill="#8b5cf6" radius={[4, 4, 0, 0]} name="Recall" />
+                <Bar dataKey="precision" fill="#0071E3" radius={[4, 4, 0, 0]} name="Precision" />
+                <Bar dataKey="recall" fill="#86868B" radius={[4, 4, 0, 0]} name="Recall" />
               </BarChart>
             </ResponsiveContainer>
           </motion.div>
@@ -222,32 +216,26 @@ export default function ModelComparison() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="glass-card rounded-2xl p-6 mb-8"
+          className="card rounded-2xl p-6 mb-8"
         >
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-            <Zap className="w-5 h-5 mr-2 text-yellow-400" />
+          <h3 className="text-lg font-medium mb-4 flex items-center" style={{ color: '#1D1D1F' }}>
+            <Zap className="w-5 h-5 mr-2 text-apple-warning" />
             Inference Time Comparison
           </h3>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={chartData} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-              <XAxis type="number" stroke="#9ca3af" />
-              <YAxis dataKey="name" type="category" stroke="#9ca3af" width={100} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#D2D2D7" />
+              <XAxis type="number" stroke="#6E6E73" />
+              <YAxis dataKey="name" type="category" stroke="#6E6E73" width={100} />
               <Tooltip
                 contentStyle={{
-                  background: 'rgba(20, 20, 30, 0.9)',
-                  border: '1px solid rgba(255,255,255,0.1)',
+                  background: '#FFFFFF',
+                  border: '1px solid #D2D2D7',
                   borderRadius: '8px',
                 }}
                 formatter={(value) => [`${value} ms`, 'Inference Time']}
               />
-              <Bar dataKey="inference" fill="url(#colorTime)" radius={[0, 4, 4, 0]} />
-              <defs>
-                <linearGradient id="colorTime" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#fbbf24" />
-                  <stop offset="100%" stopColor="#f59e0b" />
-                </linearGradient>
-              </defs>
+              <Bar dataKey="inference" fill="#0071E3" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </motion.div>
@@ -256,41 +244,41 @@ export default function ModelComparison() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="glass-card rounded-2xl overflow-hidden"
+          className="card rounded-2xl overflow-hidden"
         >
-          <div className="p-6 border-b border-white/10">
-            <h3 className="text-lg font-semibold text-white">Detailed Metrics</h3>
+          <div className="p-6 border-b border-apple-border">
+            <h3 className="text-lg font-medium" style={{ color: '#1D1D1F' }}>Detailed Metrics</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-white/5">
+              <thead className="bg-apple-gray">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-400">Model</th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-400">mAP50</th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-400">Precision</th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-400">Recall</th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-apple-secondary">Model</th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-apple-secondary">mAP50</th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-apple-secondary">Precision</th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-apple-secondary">Recall</th>
                   {viewType === 'segmentation' && (
-                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-400">IoU</th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-apple-secondary">IoU</th>
                   )}
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-400">Params (M)</th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-400">Inference (ms)</th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-apple-secondary">Params (M)</th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-apple-secondary">Inference (ms)</th>
                 </tr>
               </thead>
               <tbody>
                 {currentData.map((model, index) => (
                   <tr
                     key={model.name}
-                    className="border-t border-white/5 hover:bg-white/5 transition-colors"
+                    className="border-t border-apple-border hover:bg-apple-gray transition-colors"
                   >
-                    <td className="px-6 py-4 text-white font-medium">{model.name}</td>
-                    <td className="px-6 py-4 text-medical-400">{(model.map50 * 100).toFixed(1)}%</td>
-                    <td className="px-6 py-4 text-gray-300">{(model.precision * 100).toFixed(1)}%</td>
-                    <td className="px-6 py-4 text-gray-300">{(model.recall * 100).toFixed(1)}%</td>
+                    <td className="px-6 py-4 text-apple-text font-medium">{model.name}</td>
+                    <td className="px-6 py-4 text-apple-accent">{(model.map50 * 100).toFixed(1)}%</td>
+                    <td className="px-6 py-4 text-apple-secondary">{(model.precision * 100).toFixed(1)}%</td>
+                    <td className="px-6 py-4 text-apple-secondary">{(model.recall * 100).toFixed(1)}%</td>
                     {viewType === 'segmentation' && model.iou && (
-                      <td className="px-6 py-4 text-purple-400">{(model.iou * 100).toFixed(1)}%</td>
+                      <td className="px-6 py-4 text-apple-secondary">{(model.iou * 100).toFixed(1)}%</td>
                     )}
-                    <td className="px-6 py-4 text-gray-400">{model.params_millions}</td>
-                    <td className="px-6 py-4 text-gray-400">{model.inference_time_ms}</td>
+                    <td className="px-6 py-4 text-apple-tertiary">{model.params_millions}</td>
+                    <td className="px-6 py-4 text-apple-tertiary">{model.inference_time_ms}</td>
                   </tr>
                 ))}
               </tbody>

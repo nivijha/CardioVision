@@ -8,12 +8,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from typing import List, Optional, Tuple
+from typing import List, Optional
 import numpy as np
 from PIL import Image
 import io
 import base64
-import random
+import asyncio
 
 app = FastAPI(
     title="Stenosis Detection AI",
@@ -52,35 +52,69 @@ class ModelComparisonResponse(BaseModel):
     segmentation_models: List[dict]
 
 
-def simulate_yolo_detection(image: Image.Image) -> dict:
-    """
-    Simulate YOLOv8 detection output for demo purposes.
-    In production, this would load actual YOLOv8 models.
-    """
-    width, height = image.size
+# Global model instance with lazy loading
+_model = None
 
-    # Simulate detection based on image characteristics
+
+def get_model():
+    """Get or create the YOLO model instance."""
+    global _model
+    if _model is None:
+        from ultralytics import YOLO
+        _model = YOLO('yolov8m.pt')
+    return _model
+
+
+def run_yolo_inference(image: Image.Image) -> dict:
+    """
+    Run actual YOLOv8 inference on the image.
+    """
     img_array = np.array(image)
-    brightness = np.mean(img_array)
+    model = get_model()
+    results = model(img_array, conf=0.25, iou=0.45, verbose=False)
 
-    # Generate realistic-looking bounding box
-    bbox_width = random.randint(50, 150)
-    bbox_height = random.randint(40, 120)
-    x_center = random.randint(bbox_width // 2, width - bbox_width // 2)
-    y_center = random.randint(bbox_height // 2, height - bbox_height // 2)
+    # Parse results
+    if len(results) == 0:
+        return {
+            "stenosis": False,
+            "confidence": 0.0,
+            "severity": "none",
+            "bbox": [0, 0, 0, 0],
+            "stenosis_percent": 0.0
+        }
 
-    bbox = [
-        float(x_center - bbox_width // 2),
-        float(y_center - bbox_height // 2),
-        float(x_center + bbox_width // 2),
-        float(y_center + bbox_height // 2)
-    ]
+    result = results[0]
+    boxes = result.boxes
 
-    # Confidence based on image characteristics
-    confidence = round(random.uniform(0.72, 0.96), 3)
+    if len(boxes) == 0:
+        return {
+            "stenosis": False,
+            "confidence": 0.0,
+            "severity": "none",
+            "bbox": [0, 0, 0, 0],
+            "stenosis_percent": 0.0
+        }
 
-    # Determine severity based on simulated stenosis percentage
-    stenosis_percent = random.uniform(30, 85)
+    # Get the box with highest confidence
+    best_idx = boxes.conf.argmax().item()
+    box = boxes[best_idx]
+
+    # Extract box coordinates
+    x1, y1, x2, y2 = box.xyxy[0].tolist()
+    conf = box.conf[0].item()
+
+    # Estimate stenosis percentage based on box aspect ratio and size
+    width = x2 - x1
+    height = y2 - y1
+    aspect = height / width if width > 0 else 1
+    area = width * height
+    img_area = img_array.shape[0] * img_array.shape[1]
+    relative_area = area / img_area
+
+    # Rough estimation: higher aspect ratio + larger relative size = more severe
+    stenosis_percent = min(95, max(20, (aspect * 1.5 + relative_area * 100) * 0.6 + 20))
+
+    # Determine severity
     if stenosis_percent < 50:
         severity = "mild"
     elif stenosis_percent < 70:
@@ -90,9 +124,9 @@ def simulate_yolo_detection(image: Image.Image) -> dict:
 
     return {
         "stenosis": True,
-        "confidence": confidence,
+        "confidence": round(conf, 3),
         "severity": severity,
-        "bbox": bbox,
+        "bbox": [round(x1, 1), round(y1, 1), round(x2, 1), round(y2, 1)],
         "stenosis_percent": round(stenosis_percent, 1)
     }
 
@@ -102,7 +136,6 @@ def generate_segmentation_mask(image: Image.Image, bbox: List[float]) -> np.ndar
     width, height = image.size
     mask = np.zeros((height, width), dtype=np.uint8)
 
-    # Create elliptical mask within bbox
     center_x = int((bbox[0] + bbox[2]) / 2)
     center_y = int((bbox[1] + bbox[3]) / 2)
     axes_x = int((bbox[2] - bbox[0]) / 2 * 0.8)
@@ -119,23 +152,19 @@ def generate_gradcam_heatmap(image: Image.Image, bbox: List[float]) -> np.ndarra
     width, height = image.size
     heatmap = np.zeros((height, width, 3), dtype=np.uint8)
 
-    # Create gradient around the detected region
     center_x = int((bbox[0] + bbox[2]) / 2)
     center_y = int((bbox[1] + bbox[3]) / 2)
 
-    # Create radial gradient
     y, x = np.ogrid[:height, :width]
     distance = np.sqrt((x - center_x)**2 + (y - center_y)**2)
     max_dist = max(width, height) / 2
 
-    # Normalize and apply colormap
     intensity = np.clip(1 - distance / max_dist, 0, 1)
-    intensity = intensity ** 2  # Emphasize center
+    intensity = intensity ** 2
 
-    # Apply jet colormap
-    heatmap[:, :, 0] = (intensity * 255).astype(np.uint8)  # Red
-    heatmap[:, :, 1] = (intensity * 150).astype(np.uint8)  # Green
-    heatmap[:, :, 2] = (intensity * 100).astype(np.uint8)  # Blue
+    heatmap[:, :, 0] = (intensity * 255).astype(np.uint8)
+    heatmap[:, :, 1] = (intensity * 150).astype(np.uint8)
+    heatmap[:, :, 2] = (intensity * 100).astype(np.uint8)
 
     return heatmap
 
@@ -171,20 +200,18 @@ async def predict(file: UploadFile = File(...)):
     start_time = time.time()
 
     try:
-        # Read and validate image
         contents = await file.read()
         image = Image.open(io.BytesIO(contents)).convert("RGB")
 
-        # Simulate YOLOv8 detection
-        result = simulate_yolo_detection(image)
+        # Run YOLO inference in a thread to avoid blocking
+        result = await asyncio.to_thread(run_yolo_inference, image)
 
-        # Generate segmentation mask
+        # Generate segmentation mask and heatmap
         try:
             cv2 = __import__('cv2')
             mask = generate_segmentation_mask(image, result["bbox"])
             result["mask"] = mask.tolist()
 
-            # Generate Grad-CAM heatmap
             heatmap = generate_gradcam_heatmap(image, result["bbox"])
             result["heatmap"] = heatmap.tolist()
         except ImportError:

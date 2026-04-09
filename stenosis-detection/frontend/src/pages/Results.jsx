@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion';
 import { CheckCircle, XCircle, Eye, TrendingUp, AlertTriangle, Target } from 'lucide-react';
 
-// Mock gallery data
 const galleryData = {
   good_predictions: [
     {
@@ -78,9 +77,9 @@ const galleryData = {
 };
 
 const severityColors = {
-  mild: 'text-green-400 bg-green-500/10 border-green-500/30',
-  moderate: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30',
-  severe: 'text-red-400 bg-red-500/10 border-red-500/30',
+  mild: 'bg-apple-success text-white',
+  moderate: 'bg-apple-warning text-white',
+  severe: 'bg-apple-danger text-white',
 };
 
 export default function Results() {
@@ -93,10 +92,10 @@ export default function Results() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-8"
         >
-          <h1 className="text-4xl font-bold text-white mb-2">
-            <span className="gradient-text">Results Gallery</span>
+          <h1 className="text-4xl font-semibold mb-2 tracking-tight" style={{ color: '#1D1D1F' }}>
+            Results Gallery
           </h1>
-          <p className="text-gray-400">
+          <p className="text-apple-secondary">
             Analysis of model performance across different cases
           </p>
         </motion.div>
@@ -106,41 +105,41 @@ export default function Results() {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="glass-card rounded-xl p-4 text-center"
+            className="card rounded-xl p-4 text-center spring-hover"
           >
-            <CheckCircle className="w-8 h-8 text-green-400 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-white">{galleryData.good_predictions.length}</p>
-            <p className="text-sm text-gray-400">Successful Detections</p>
+            <CheckCircle className="w-8 h-8 text-apple-success mx-auto mb-2" />
+            <p className="text-2xl font-semibold text-apple-text">{galleryData.good_predictions.length}</p>
+            <p className="text-sm text-apple-secondary">Successful Detections</p>
           </motion.div>
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.1 }}
-            className="glass-card rounded-xl p-4 text-center"
+            className="card rounded-xl p-4 text-center spring-hover"
           >
-            <AlertTriangle className="w-8 h-8 text-yellow-400 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-white">{galleryData.failure_cases.length}</p>
-            <p className="text-sm text-gray-400">Failure Cases</p>
+            <AlertTriangle className="w-8 h-8 text-apple-warning mx-auto mb-2" />
+            <p className="text-2xl font-semibold text-apple-text">{galleryData.failure_cases.length}</p>
+            <p className="text-sm text-apple-secondary">Failure Cases</p>
           </motion.div>
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
-            className="glass-card rounded-xl p-4 text-center"
+            className="card rounded-xl p-4 text-center spring-hover"
           >
-            <Target className="w-8 h-8 text-medical-400 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-white">86.7%</p>
-            <p className="text-sm text-gray-400">Best mAP50</p>
+            <Target className="w-8 h-8 text-apple-accent mx-auto mb-2" />
+            <p className="text-2xl font-semibold text-apple-text">86.7%</p>
+            <p className="text-sm text-apple-secondary">Best mAP50</p>
           </motion.div>
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.3 }}
-            className="glass-card rounded-xl p-4 text-center"
+            className="card rounded-xl p-4 text-center spring-hover"
           >
-            <TrendingUp className="w-8 h-8 text-purple-400 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-white">0.79</p>
-            <p className="text-sm text-gray-400">Best IoU</p>
+            <TrendingUp className="w-8 h-8 text-apple-secondary mx-auto mb-2" />
+            <p className="text-2xl font-semibold text-apple-text">0.79</p>
+            <p className="text-sm text-apple-secondary">Best IoU</p>
           </motion.div>
         </div>
 
@@ -151,8 +150,8 @@ export default function Results() {
           className="mb-12"
         >
           <div className="flex items-center space-x-3 mb-6">
-            <CheckCircle className="w-6 h-6 text-green-400" />
-            <h2 className="text-2xl font-bold text-white">Successful Detections</h2>
+            <CheckCircle className="w-6 h-6 text-apple-success" />
+            <h2 className="text-2xl font-semibold" style={{ color: '#1D1D1F' }}>Successful Detections</h2>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {galleryData.good_predictions.map((item, index) => (
@@ -160,33 +159,30 @@ export default function Results() {
                 key={item.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="glass-card rounded-xl overflow-hidden glass-card-hover group"
+                transition={{ delay: index * 0.05 }}
+                className="card rounded-xl overflow-hidden spring-hover group"
               >
                 <div className="aspect-square relative overflow-hidden">
                   <img
                     src={item.image}
                     alt={`Case ${item.id}`}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                  {/* Overlay Info */}
-                  <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <Eye className="w-4 h-4 text-medical-400" />
-                      <span className="text-white font-semibold">{(item.confidence * 100).toFixed(0)}%</span>
+                </div>
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-2">
+                      <Eye className="w-4 h-4 text-apple-accent" />
+                      <span className="font-semibold text-apple-text">{(item.confidence * 100).toFixed(0)}%</span>
                     </div>
                     <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${severityColors[item.severity]}`}>
                       {item.severity}
                     </span>
                   </div>
-                </div>
-                <div className="p-4">
-                  <p className="text-sm text-gray-300 mb-2">{item.observation}</p>
-                  <div className="flex items-center justify-between text-xs text-gray-500">
+                  <p className="text-sm text-apple-secondary mb-2">{item.observation}</p>
+                  <div className="flex items-center justify-between text-xs text-apple-tertiary">
                     <span>{item.model}</span>
-                    <CheckCircle className="w-4 h-4 text-green-400" />
+                    <CheckCircle className="w-4 h-4 text-apple-success" />
                   </div>
                 </div>
               </motion.div>
@@ -201,8 +197,8 @@ export default function Results() {
           transition={{ delay: 0.4 }}
         >
           <div className="flex items-center space-x-3 mb-6">
-            <XCircle className="w-6 h-6 text-red-400" />
-            <h2 className="text-2xl font-bold text-white">Failure Cases & Challenges</h2>
+            <XCircle className="w-6 h-6 text-apple-danger" />
+            <h2 className="text-2xl font-semibold" style={{ color: '#1D1D1F' }}>Failure Cases & Challenges</h2>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {galleryData.failure_cases.map((item, index) => (
@@ -210,27 +206,26 @@ export default function Results() {
                 key={item.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 + index * 0.1 }}
-                className="glass-card rounded-xl overflow-hidden border border-red-500/20 glass-card-hover group"
+                transition={{ delay: 0.1 + index * 0.05 }}
+                className="card rounded-xl overflow-hidden border border-apple-danger/20 spring-hover group"
               >
                 <div className="aspect-square relative overflow-hidden">
                   <img
                     src={item.image}
                     alt={`Case ${item.id}`}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
-                  <div className="absolute top-2 right-2 px-2 py-1 rounded bg-red-500/80 text-white text-xs font-medium">
+                  <div className="absolute top-2 right-2 px-2 py-1 rounded bg-apple-danger/90 text-white text-xs font-medium">
                     {item.failure_reason}
                   </div>
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </div>
                 <div className="p-4">
-                  <p className="text-sm text-gray-300 mb-3">{item.observation}</p>
+                  <p className="text-sm text-apple-secondary mb-3">{item.observation}</p>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-gray-500">{item.model}</span>
-                    <span className="text-xs text-red-400">{(item.confidence * 100).toFixed(0)}% conf</span>
+                    <span className="text-xs text-apple-tertiary">{item.model}</span>
+                    <span className="text-xs text-apple-danger">{(item.confidence * 100).toFixed(0)}% conf</span>
                   </div>
-                  <div className="flex items-center space-x-1 text-xs text-red-400">
+                  <div className="flex items-center space-x-1 text-xs text-apple-danger">
                     <AlertTriangle className="w-3 h-3" />
                     <span>{item.failure_reason}</span>
                   </div>
@@ -245,54 +240,54 @@ export default function Results() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
-          className="mt-12 glass-card rounded-2xl p-6"
+          className="mt-12 card rounded-2xl p-6"
         >
-          <h3 className="text-xl font-bold text-white mb-4">Analysis Summary</h3>
+          <h3 className="text-xl font-semibold mb-4" style={{ color: '#1D1D1F' }}>Analysis Summary</h3>
           <div className="grid md:grid-cols-2 gap-6">
             <div>
-              <h4 className="text-green-400 font-semibold mb-2 flex items-center">
+              <h4 className="text-apple-success font-semibold mb-2 flex items-center">
                 <CheckCircle className="w-4 h-4 mr-2" />
                 Success Factors
               </h4>
-              <ul className="space-y-2 text-sm text-gray-400">
+              <ul className="space-y-2 text-sm text-apple-secondary">
                 <li className="flex items-start">
-                  <span className="text-medical-400 mr-2">•</span>
+                  <span className="text-apple-accent mr-2">&bull;</span>
                   High contrast angiography images yield best results
                 </li>
                 <li className="flex items-start">
-                  <span className="text-medical-400 mr-2">•</span>
+                  <span className="text-apple-accent mr-2">&bull;</span>
                   YOLOv8m achieves optimal balance of accuracy and speed
                 </li>
                 <li className="flex items-start">
-                  <span className="text-medical-400 mr-2">•</span>
+                  <span className="text-apple-accent mr-2">&bull;</span>
                   Segmentation models provide better boundary delineation
                 </li>
                 <li className="flex items-start">
-                  <span className="text-medical-400 mr-2">•</span>
+                  <span className="text-apple-accent mr-2">&bull;</span>
                   Models perform well on moderate to severe cases
                 </li>
               </ul>
             </div>
             <div>
-              <h4 className="text-red-400 font-semibold mb-2 flex items-center">
+              <h4 className="text-apple-danger font-semibold mb-2 flex items-center">
                 <AlertTriangle className="w-4 h-4 mr-2" />
                 Common Failure Modes
               </h4>
-              <ul className="space-y-2 text-sm text-gray-400">
+              <ul className="space-y-2 text-sm text-apple-secondary">
                 <li className="flex items-start">
-                  <span className="text-medical-400 mr-2">•</span>
+                  <span className="text-apple-accent mr-2">&bull;</span>
                   Low contrast images reduce detection confidence
                 </li>
                 <li className="flex items-start">
-                  <span className="text-medical-400 mr-2">•</span>
+                  <span className="text-apple-accent mr-2">&bull;</span>
                   Motion artifacts from patient movement
                 </li>
                 <li className="flex items-start">
-                  <span className="text-medical-400 mr-2">•</span>
+                  <span className="text-apple-accent mr-2">&bull;</span>
                   Overlapping anatomical structures cause confusion
                 </li>
                 <li className="flex items-start">
-                  <span className="text-medical-400 mr-2">•</span>
+                  <span className="text-apple-accent mr-2">&bull;</span>
                   Image noise affects smaller model performance
                 </li>
               </ul>

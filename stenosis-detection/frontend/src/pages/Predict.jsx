@@ -8,9 +8,16 @@ export default function Predict() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [processingStage, setProcessingStage] = useState('');
   const [result, setResult] = useState(null);
-  const [viewMode, setViewMode] = useState('detection'); // 'detection' | 'segmentation'
+  const [viewMode, setViewMode] = useState('detection');
   const [error, setError] = useState(null);
+
+  const stages = [
+    { id: 'upload', label: 'Uploading...', icon: Upload },
+    { id: 'analyze', label: 'Analyzing...', icon: Loader },
+    { id: 'complete', label: 'Complete', icon: CheckCircle },
+  ];
 
   const onDrop = useCallback(async (acceptedFiles) => {
     const file = acceptedFiles[0];
@@ -21,7 +28,6 @@ export default function Predict() {
     setResult(null);
     setError(null);
 
-    // Auto-predict on upload
     await handlePredict(file);
   }, []);
 
@@ -36,8 +42,13 @@ export default function Predict() {
   const handlePredict = async (file) => {
     setLoading(true);
     setError(null);
+    setProcessingStage('upload');
 
     try {
+      // Simulate stage progression
+      await new Promise(r => setTimeout(r, 500));
+      setProcessingStage('analyze');
+
       const formData = new FormData();
       formData.append('file', file);
 
@@ -47,7 +58,10 @@ export default function Predict() {
         },
       });
 
+      setProcessingStage('complete');
       setResult(response.data);
+
+      await new Promise(r => setTimeout(r, 800));
     } catch (err) {
       setError(err.message || 'Failed to process image');
       console.error('Prediction error:', err);
@@ -61,6 +75,7 @@ export default function Predict() {
     setPreviewUrl(null);
     setResult(null);
     setError(null);
+    setProcessingStage('');
     setViewMode('detection');
   };
 
@@ -75,19 +90,10 @@ export default function Predict() {
 
   const getSeverityClass = (severity) => {
     switch (severity) {
-      case 'mild': return 'severity-mild';
-      case 'moderate': return 'severity-moderate';
-      case 'severe': return 'severity-severe';
-      default: return '';
-    }
-  };
-
-  const getSeverityIcon = (severity) => {
-    switch (severity) {
-      case 'mild': return '🟢';
-      case 'moderate': return '🟡';
-      case 'severe': return '🔴';
-      default: return '⚪';
+      case 'mild': return 'bg-apple-success text-white';
+      case 'moderate': return 'bg-apple-warning text-white';
+      case 'severe': return 'bg-apple-danger text-white';
+      default: return 'bg-apple-gray text-apple-text';
     }
   };
 
@@ -100,10 +106,10 @@ export default function Predict() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-8"
         >
-          <h1 className="text-4xl font-bold text-white mb-2">
-            <span className="gradient-text">Stenosis Detection</span>
+          <h1 className="text-4xl font-semibold mb-2 tracking-tight" style={{ color: '#1D1D1F' }}>
+            Stenosis Detection
           </h1>
-          <p className="text-gray-400">
+          <p className="text-apple-secondary">
             Upload an angiography image for AI-powered analysis
           </p>
         </motion.div>
@@ -115,9 +121,9 @@ export default function Predict() {
             animate={{ opacity: 1, x: 0 }}
             className="space-y-4"
           >
-            <div className="glass-card rounded-2xl p-6">
-              <h2 className="text-lg font-semibold text-white mb-4 flex items-center">
-                <Upload className="w-5 h-5 mr-2 text-medical-400" />
+            <div className="card rounded-2xl p-6">
+              <h2 className="text-lg font-medium mb-4 flex items-center" style={{ color: '#1D1D1F' }}>
+                <Upload className="w-5 h-5 mr-2 text-apple-accent" />
                 Image Upload
               </h2>
 
@@ -126,22 +132,22 @@ export default function Predict() {
                   {...getRootProps()}
                   className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-all duration-300 ${
                     isDragActive
-                      ? 'border-medical-400 bg-medical-600/10'
-                      : 'border-white/10 hover:border-medical-400/50 hover:bg-white/5'
+                      ? 'border-apple-accent bg-apple-gray'
+                      : 'border-apple-border hover:border-apple-accent'
                   }`}
                 >
                   <input {...getInputProps()} />
-                  <Upload className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-                  <p className="text-gray-300 mb-2">
+                  <Upload className="w-12 h-12 text-apple-tertiary mx-auto mb-4" />
+                  <p className="text-apple-text mb-2">
                     {isDragActive ? 'Drop the image here' : 'Drag & drop an image here'}
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-apple-tertiary">
                     or click to select (PNG, JPG, BMP)
                   </p>
                 </div>
               ) : (
                 <div className="relative">
-                  <div className="aspect-square rounded-xl overflow-hidden bg-black/50">
+                  <div className="aspect-square rounded-xl overflow-hidden bg-apple-gray border border-apple-border">
                     <img
                       src={previewUrl}
                       alt="Uploaded angiography"
@@ -150,17 +156,17 @@ export default function Predict() {
                   </div>
                   <button
                     onClick={handleReset}
-                    className="absolute top-2 right-2 p-2 rounded-lg glass-card text-white hover:bg-red-500/80 transition-colors"
+                    className="absolute top-2 right-2 p-2 rounded-lg bg-apple-surface text-apple-secondary hover:text-apple-danger transition-colors shadow-card"
                   >
                     <X className="w-5 h-5" />
                   </button>
 
                   {loading && (
-                    <div className="absolute inset-0 bg-black/70 rounded-xl flex items-center justify-center">
+                    <div className="absolute inset-0 bg-apple-surface/90 rounded-xl flex items-center justify-center">
                       <div className="text-center">
-                        <Loader className="w-12 h-12 text-medical-400 mx-auto mb-4 animate-spin" />
-                        <p className="text-white">Analyzing image...</p>
-                        <p className="text-sm text-gray-400">Running YOLOv8 inference</p>
+                        <Loader className="w-12 h-12 text-apple-accent mx-auto mb-4 animate-spin" />
+                        <p className="text-apple-text font-medium">Analyzing image...</p>
+                        <p className="text-sm text-apple-secondary">Running YOLOv8 inference</p>
                       </div>
                     </div>
                   )}
@@ -168,12 +174,57 @@ export default function Predict() {
               )}
 
               {error && (
-                <div className="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center space-x-3">
-                  <AlertCircle className="w-5 h-5 text-red-400" />
-                  <span className="text-red-400">{error}</span>
+                <div className="mt-4 p-4 rounded-xl bg-apple-danger/10 border border-apple-danger/30 flex items-center space-x-3">
+                  <AlertCircle className="w-5 h-5 text-apple-danger" />
+                  <span className="text-apple-danger">{error}</span>
                 </div>
               )}
             </div>
+
+            {/* Processing Stages */}
+            {loading && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="card rounded-2xl p-4"
+              >
+                <div className="flex items-center justify-between">
+                  {stages.map((stage, index) => {
+                    const isComplete = stage.id === 'complete';
+                    const isCurrent = stage.id === processingStage;
+                    const isPast = stages.findIndex(s => s.id === processingStage) > index;
+
+                    return (
+                      <div key={stage.id} className="flex items-center">
+                        <div className="flex flex-col items-center">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                            isPast || isComplete
+                              ? 'bg-apple-success text-white'
+                              : isCurrent
+                                ? 'bg-apple-accent text-white'
+                                : 'bg-apple-gray text-apple-tertiary'
+                          }`}>
+                            {isPast || isComplete ? (
+                              <CheckCircle className="w-5 h-5" />
+                            ) : (
+                              <stage.icon className={`w-5 h-5 ${isCurrent ? 'animate-spin' : ''}`} />
+                            )}
+                          </div>
+                          <span className={`text-xs mt-1 ${isPast || isComplete ? 'text-apple-success' : isCurrent ? 'text-apple-accent' : 'text-apple-tertiary'}`}>
+                            {stage.label}
+                          </span>
+                        </div>
+                        {index < stages.length - 1 && (
+                          <div className={`w-8 h-0.5 mx-2 ${
+                            isPast || isComplete ? 'bg-apple-success' : 'bg-apple-border'
+                          }`} />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
           </motion.div>
 
           {/* Results Section */}
@@ -182,16 +233,16 @@ export default function Predict() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <div className="glass-card rounded-2xl p-6 h-full">
+            <div className="card rounded-2xl p-6 h-full">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-white flex items-center">
-                  <CheckCircle className="w-5 h-5 mr-2 text-medical-400" />
+                <h2 className="text-lg font-medium flex items-center" style={{ color: '#1D1D1F' }}>
+                  <CheckCircle className="w-5 h-5 mr-2 text-apple-accent" />
                   Analysis Results
                 </h2>
                 {result && (
                   <button
                     onClick={handleDownload}
-                    className="p-2 rounded-lg glass-card text-gray-400 hover:text-white transition-colors"
+                    className="p-2 rounded-lg bg-apple-gray text-apple-secondary hover:text-apple-accent transition-colors"
                     title="Download Results"
                   >
                     <Download className="w-5 h-5" />
@@ -200,7 +251,7 @@ export default function Predict() {
               </div>
 
               {!result && !loading && (
-                <div className="h-64 flex items-center justify-center text-gray-500">
+                <div className="h-64 flex items-center justify-center text-apple-tertiary">
                   <div className="text-center">
                     <Eye className="w-12 h-12 mx-auto mb-4 opacity-50" />
                     <p>Upload an image to see analysis results</p>
@@ -209,22 +260,26 @@ export default function Predict() {
               )}
 
               {result && (
-                <div className="space-y-6">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="space-y-6"
+                >
                   {/* Stenosis Detection Status */}
-                  <div className="glass-card rounded-xl p-4">
+                  <div className="card rounded-xl p-4 border border-apple-border">
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-gray-400">Detection Status</span>
+                      <span className="text-apple-secondary">Detection Status</span>
                       <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        result.stenosis ? 'bg-medical-500/20 text-medical-400' : 'bg-gray-500/20 text-gray-400'
+                        result.stenosis ? 'bg-apple-success/10 text-apple-success border border-apple-success/30' : 'bg-apple-gray text-apple-secondary'
                       }`}>
                         {result.stenosis ? 'Stenosis Detected' : 'No Stenosis'}
                       </span>
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-400">Severity</span>
+                      <span className="text-apple-secondary">Severity</span>
                       <span className={`px-3 py-1 rounded-full text-sm font-medium ${getSeverityClass(result.severity)}`}>
-                        {getSeverityIcon(result.severity)} {result.severity.toUpperCase()}
+                        {result.severity.toUpperCase()}
                       </span>
                     </div>
                   </div>
@@ -232,15 +287,15 @@ export default function Predict() {
                   {/* Confidence Score */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-gray-400">Confidence Score</span>
-                      <span className="text-white font-semibold">{(result.confidence * 100).toFixed(1)}%</span>
+                      <span className="text-apple-secondary">Confidence Score</span>
+                      <span className="font-semibold" style={{ color: '#1D1D1F' }}>{(result.confidence * 100).toFixed(1)}%</span>
                     </div>
-                    <div className="h-3 bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-1 bg-apple-gray rounded-full overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${result.confidence * 100}%` }}
-                        transition={{ duration: 1, delay: 0.3 }}
-                        className="h-full bg-gradient-to-r from-medical-500 to-cyan-500"
+                        transition={{ duration: 0.8, ease: 'easeOut' }}
+                        className="h-full bg-apple-accent"
                       />
                     </div>
                   </div>
@@ -249,10 +304,10 @@ export default function Predict() {
                   <div className="flex space-x-2">
                     <button
                       onClick={() => setViewMode('detection')}
-                      className={`flex-1 py-3 rounded-xl flex items-center justify-center space-x-2 transition-all ${
+                      className={`flex-1 py-3 rounded-xl flex items-center justify-center space-x-2 transition-all border ${
                         viewMode === 'detection'
-                          ? 'bg-medical-600/30 text-medical-400 border border-medical-400/30'
-                          : 'glass-card text-gray-400 hover:text-white'
+                          ? 'bg-apple-accent text-white border-apple-accent'
+                          : 'bg-apple-surface text-apple-secondary border-apple-border hover:border-apple-accent'
                       }`}
                     >
                       <Eye className="w-5 h-5" />
@@ -260,10 +315,10 @@ export default function Predict() {
                     </button>
                     <button
                       onClick={() => setViewMode('segmentation')}
-                      className={`flex-1 py-3 rounded-xl flex items-center justify-center space-x-2 transition-all ${
+                      className={`flex-1 py-3 rounded-xl flex items-center justify-center space-x-2 transition-all border ${
                         viewMode === 'segmentation'
-                          ? 'bg-medical-600/30 text-medical-400 border border-medical-400/30'
-                          : 'glass-card text-gray-400 hover:text-white'
+                          ? 'bg-apple-accent text-white border-apple-accent'
+                          : 'bg-apple-surface text-apple-secondary border-apple-border hover:border-apple-accent'
                       }`}
                     >
                       <Layers className="w-5 h-5" />
@@ -273,26 +328,61 @@ export default function Predict() {
 
                   {/* Metrics Grid */}
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="glass-card rounded-xl p-3">
-                      <p className="text-xs text-gray-400 mb-1">Model Used</p>
-                      <p className="text-white font-medium">{result.model_used}</p>
-                    </div>
-                    <div className="glass-card rounded-xl p-3">
-                      <p className="text-xs text-gray-400 mb-1">Processing Time</p>
-                      <p className="text-white font-medium">{result.processing_time}s</p>
-                    </div>
-                    <div className="glass-card rounded-xl p-3">
-                      <p className="text-xs text-gray-400 mb-1">Stenosis %</p>
-                      <p className="text-white font-medium">{result.stenosis_percent}%</p>
-                    </div>
-                    <div className="glass-card rounded-xl p-3">
-                      <p className="text-xs text-gray-400 mb-1">Bounding Box</p>
-                      <p className="text-white font-medium text-xs">
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.05 }}
+                      className="card rounded-xl p-3 border border-apple-border"
+                    >
+                      <p className="text-xs text-apple-secondary mb-1">Model Used</p>
+                      <p className="font-medium" style={{ color: '#1D1D1F' }}>{result.model_used}</p>
+                    </motion.div>
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 }}
+                      className="card rounded-xl p-3 border border-apple-border"
+                    >
+                      <p className="text-xs text-apple-secondary mb-1">Processing Time</p>
+                      <p className="font-medium" style={{ color: '#1D1D1F' }}>{result.processing_time}s</p>
+                    </motion.div>
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.15 }}
+                      className="card rounded-xl p-3 border border-apple-border"
+                    >
+                      <p className="text-xs text-apple-secondary mb-1">Stenosis %</p>
+                      <p className="font-medium" style={{ color: '#1D1D1F' }}>{result.stenosis_percent}%</p>
+                    </motion.div>
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 }}
+                      className="card rounded-xl p-3 border border-apple-border"
+                    >
+                      <p className="text-xs text-apple-secondary mb-1">Bounding Box</p>
+                      <p className="font-medium text-xs" style={{ color: '#1D1D1F' }}>
                         {result.bbox?.map(b => b.toFixed(0)).join(', ')}
                       </p>
-                    </div>
+                    </motion.div>
                   </div>
-                </div>
+
+                  {/* Try Another Button */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    <button
+                      onClick={handleReset}
+                      className="w-full btn-press py-3 rounded-xl flex items-center justify-center space-x-2 bg-apple-gray text-apple-text border border-apple-border hover:border-apple-accent transition-all"
+                    >
+                      <RotateCcw className="w-5 h-5" />
+                      <span>Try Another Image</span>
+                    </button>
+                  </motion.div>
+                </motion.div>
               )}
             </div>
           </motion.div>
@@ -306,25 +396,25 @@ export default function Predict() {
             transition={{ delay: 0.4 }}
             className="mt-6"
           >
-            <div className="glass-card rounded-2xl p-6">
-              <h2 className="text-lg font-semibold text-white mb-4 flex items-center">
-                <Eye className="w-5 h-5 mr-2 text-medical-400" />
+            <div className="card rounded-2xl p-6">
+              <h2 className="text-lg font-medium mb-4 flex items-center" style={{ color: '#1D1D1F' }}>
+                <Eye className="w-5 h-5 mr-2 text-apple-accent" />
                 Explainability (Grad-CAM Heatmap)
               </h2>
-              <p className="text-sm text-gray-400 mb-4">
+              <p className="text-sm text-apple-secondary mb-4">
                 Highlighted regions indicate model attention for stenosis detection.
                 Warmer colors represent higher attention.
               </p>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-400 mb-2">Original Image</p>
-                  <div className="aspect-video rounded-xl overflow-hidden bg-black/50">
+                  <p className="text-sm text-apple-secondary mb-2">Original Image</p>
+                  <div className="aspect-video rounded-xl overflow-hidden bg-apple-gray border border-apple-border">
                     <img src={previewUrl} alt="Original" className="w-full h-full object-contain" />
                   </div>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-400 mb-2">Grad-CAM Heatmap Overlay</p>
-                  <div className="aspect-video rounded-xl overflow-hidden bg-black/50 relative">
+                  <p className="text-sm text-apple-secondary mb-2">Grad-CAM Heatmap Overlay</p>
+                  <div className="aspect-video rounded-xl overflow-hidden bg-apple-gray border border-apple-border relative">
                     <img src={previewUrl} alt="Original" className="w-full h-full object-contain opacity-60" />
                     <div
                       className="absolute inset-0"
