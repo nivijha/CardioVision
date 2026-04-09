@@ -130,9 +130,14 @@ export default function Home() {
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 className="card rounded-2xl p-6 spring-hover"
               >
-                <div className="w-12 h-12 rounded-xl bg-apple-gray flex items-center justify-center mb-4">
-                  <feature.icon className="w-6 h-6 text-apple-accent" />
-                </div>
+                   {/*
+                  <div className="w-12 h-12 rounded-xl bg-apple-gray flex items-center justify-center mb-4">
+                    <feature.icon className="w-6 h-6 text-apple-accent" />
+                  </div>
+                  */}
+                  <div className="w-12 h-12 rounded-xl bg-apple-accent text-white flex items-center justify-center mb-4 font-semibold text-lg">
+                    {index + 1}
+                  </div>
                 <h3 className="text-lg font-medium mb-2" style={{ color: '#1D1D1F' }}>
                   {feature.title}
                 </h3>
