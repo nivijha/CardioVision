@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, X, Loader, Eye, Layers, Download, RotateCcw, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, X, Eye, Layers, Download, RotateCcw, CheckCircle, AlertCircle, Image as ImageIcon, FileCheck } from 'lucide-react';
 import axios from 'axios';
 
 export default function Predict() {
@@ -14,8 +14,8 @@ export default function Predict() {
   const [error, setError] = useState(null);
 
   const stages = [
-    { id: 'upload', label: 'Uploading...', icon: Upload },
-    { id: 'analyze', label: 'Analyzing...', icon: Loader },
+    { id: 'upload', label: 'Uploading', icon: Upload },
+    { id: 'analyze', label: 'Analyzing', icon: Eye },
     { id: 'complete', label: 'Complete', icon: CheckCircle },
   ];
 
@@ -45,7 +45,6 @@ export default function Predict() {
     setProcessingStage('upload');
 
     try {
-      // Simulate stage progression
       await new Promise(r => setTimeout(r, 500));
       setProcessingStage('analyze');
 
@@ -90,27 +89,31 @@ export default function Predict() {
 
   const getSeverityClass = (severity) => {
     switch (severity) {
-      case 'mild': return 'bg-apple-success text-white';
-      case 'moderate': return 'bg-apple-warning text-white';
-      case 'severe': return 'bg-apple-danger text-white';
-      default: return 'bg-apple-gray text-apple-text';
+      case 'mild': return 'badge-soft-success';
+      case 'moderate': return 'badge-soft-warning';
+      case 'severe': return 'badge-soft-danger';
+      default: return 'bg-warm-sand text-warm-secondary';
     }
   };
 
   return (
-    <div className="min-h-screen py-8">
+    <div className="min-h-screen py-12 bg-warm-bgAlt">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
+          className="text-center mb-10"
         >
-          <h1 className="text-4xl font-semibold mb-2 tracking-tight" style={{ color: '#1D1D1F' }}>
+          {/* <div className="inline-flex items-center space-x-2 card px-4 py-2 rounded-full mb-4">
+            <FileCheck className="w-4 h-4 text-warm-primary" />
+            <span className="text-sm text-warm-secondary font-medium">AI-Powered Analysis</span>
+          </div> */}
+          <h1 className="text-4xl md:text-5xl font-semibold mb-3 tracking-tight text-warm-text">
             Stenosis Detection
           </h1>
-          <p className="text-apple-secondary">
-            Upload an angiography image for AI-powered analysis
+          <p className="text-warm-secondary text-lg max-w-2xl mx-auto">
+            Upload an angiography image for AI-powered analysis using state-of-the-art YOLOv8 models
           </p>
         </motion.div>
 
@@ -122,32 +125,34 @@ export default function Predict() {
             className="space-y-4"
           >
             <div className="card rounded-2xl p-6">
-              <h2 className="text-lg font-medium mb-4 flex items-center" style={{ color: '#1D1D1F' }}>
-                <Upload className="w-5 h-5 mr-2 text-apple-accent" />
+              <h2 className="text-lg font-semibold mb-4 flex items-center text-warm-text">
+                <Upload className="w-5 h-5 mr-2 text-warm-primary" />
                 Image Upload
               </h2>
 
               {!selectedFile ? (
                 <div
                   {...getRootProps()}
-                  className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-all duration-300 ${
+                  className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all duration-300 ${
                     isDragActive
-                      ? 'border-apple-accent bg-apple-gray'
-                      : 'border-apple-border hover:border-apple-accent'
+                      ? 'border-warm-primary bg-warm-sand'
+                      : 'border-warm-border hover:border-warm-primary hover:bg-warm-sand/50'
                   }`}
                 >
                   <input {...getInputProps()} />
-                  <Upload className="w-12 h-12 text-apple-tertiary mx-auto mb-4" />
-                  <p className="text-apple-text mb-2">
+                  <div className="w-16 h-16 rounded-2xl bg-warm-sand flex items-center justify-center mx-auto mb-4">
+                    <ImageIcon className="w-8 h-8 text-warm-primary" />
+                  </div>
+                  <p className="text-warm-text font-medium mb-2">
                     {isDragActive ? 'Drop the image here' : 'Drag & drop an image here'}
                   </p>
-                  <p className="text-sm text-apple-tertiary">
+                  <p className="text-sm text-warm-tertiary">
                     or click to select (PNG, JPG, BMP)
                   </p>
                 </div>
               ) : (
                 <div className="relative">
-                  <div className="aspect-square rounded-xl overflow-hidden bg-apple-gray border border-apple-border">
+                  <div className="aspect-square rounded-2xl overflow-hidden bg-warm-sand border border-warm-border">
                     <img
                       src={previewUrl}
                       alt="Uploaded angiography"
@@ -156,17 +161,20 @@ export default function Predict() {
                   </div>
                   <button
                     onClick={handleReset}
-                    className="absolute top-2 right-2 p-2 rounded-lg bg-apple-surface text-apple-secondary hover:text-apple-danger transition-colors shadow-card"
+                    className="absolute top-3 right-3 p-2.5 rounded-xl bg-warm-surface/90 backdrop-blur text-warm-secondary hover:text-warm-danger hover:bg-warm-danger/10 transition-all shadow-soft"
                   >
                     <X className="w-5 h-5" />
                   </button>
 
                   {loading && (
-                    <div className="absolute inset-0 bg-apple-surface/90 rounded-xl flex items-center justify-center">
+                    <div className="absolute inset-0 bg-warm-surface/90 backdrop-blur-sm rounded-2xl flex items-center justify-center">
                       <div className="text-center">
-                        <Loader className="w-12 h-12 text-apple-accent mx-auto mb-4 animate-spin" />
-                        <p className="text-apple-text font-medium">Analyzing image...</p>
-                        <p className="text-sm text-apple-secondary">Running YOLOv8 inference</p>
+                        <div className="relative w-16 h-16 mx-auto mb-4">
+                          <div className="absolute inset-0 rounded-full border-4 border-warm-sand" />
+                          <div className="absolute inset-0 rounded-full border-4 border-warm-primary border-t-transparent animate-spin" />
+                        </div>
+                        <p className="text-warm-text font-medium">Analyzing image...</p>
+                        <p className="text-sm text-warm-secondary">Running YOLOv8 inference</p>
                       </div>
                     </div>
                   )}
@@ -174,9 +182,9 @@ export default function Predict() {
               )}
 
               {error && (
-                <div className="mt-4 p-4 rounded-xl bg-apple-danger/10 border border-apple-danger/30 flex items-center space-x-3">
-                  <AlertCircle className="w-5 h-5 text-apple-danger" />
-                  <span className="text-apple-danger">{error}</span>
+                <div className="mt-4 p-4 rounded-xl bg-warm-danger/10 border border-warm-danger/30 flex items-center space-x-3">
+                  <AlertCircle className="w-5 h-5 text-warm-danger" />
+                  <span className="text-warm-danger">{error}</span>
                 </div>
               )}
             </div>
@@ -186,7 +194,7 @@ export default function Predict() {
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="card rounded-2xl p-4"
+                className="card rounded-2xl p-5"
               >
                 <div className="flex items-center justify-between">
                   {stages.map((stage, index) => {
@@ -197,26 +205,28 @@ export default function Predict() {
                     return (
                       <div key={stage.id} className="flex items-center">
                         <div className="flex flex-col items-center">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
                             isPast || isComplete
-                              ? 'bg-apple-success text-white'
+                              ? 'bg-warm-success text-white'
                               : isCurrent
-                                ? 'bg-apple-accent text-white'
-                                : 'bg-apple-gray text-apple-tertiary'
+                                ? 'bg-warm-primary text-white shadow-soft'
+                                : 'bg-warm-sand text-warm-tertiary'
                           }`}>
                             {isPast || isComplete ? (
                               <CheckCircle className="w-5 h-5" />
                             ) : (
-                              <stage.icon className={`w-5 h-5 ${isCurrent ? 'animate-spin' : ''}`} />
+                              <stage.icon className={`w-5 h-5 ${isCurrent ? 'animate-pulse' : ''}`} />
                             )}
                           </div>
-                          <span className={`text-xs mt-1 ${isPast || isComplete ? 'text-apple-success' : isCurrent ? 'text-apple-accent' : 'text-apple-tertiary'}`}>
+                          <span className={`text-xs mt-2 font-medium ${
+                            isPast || isComplete ? 'text-warm-success' : isCurrent ? 'text-warm-primary' : 'text-warm-tertiary'
+                          }`}>
                             {stage.label}
                           </span>
                         </div>
                         {index < stages.length - 1 && (
-                          <div className={`w-8 h-0.5 mx-2 ${
-                            isPast || isComplete ? 'bg-apple-success' : 'bg-apple-border'
+                          <div className={`w-10 h-1 mx-2 rounded-full transition-all ${
+                            isPast || isComplete ? 'bg-warm-success' : 'bg-warm-sand'
                           }`} />
                         )}
                       </div>
@@ -234,15 +244,15 @@ export default function Predict() {
             transition={{ delay: 0.2 }}
           >
             <div className="card rounded-2xl p-6 h-full">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-medium flex items-center" style={{ color: '#1D1D1F' }}>
-                  <CheckCircle className="w-5 h-5 mr-2 text-apple-accent" />
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold flex items-center text-warm-text">
+                  <CheckCircle className="w-5 h-5 mr-2 text-warm-primary" />
                   Analysis Results
                 </h2>
                 {result && (
                   <button
                     onClick={handleDownload}
-                    className="p-2 rounded-lg bg-apple-gray text-apple-secondary hover:text-apple-accent transition-colors"
+                    className="p-2.5 rounded-xl bg-warm-sand text-warm-secondary hover:text-warm-primary hover:bg-warm-primary/10 transition-all"
                     title="Download Results"
                   >
                     <Download className="w-5 h-5" />
@@ -251,10 +261,13 @@ export default function Predict() {
               </div>
 
               {!result && !loading && (
-                <div className="h-64 flex items-center justify-center text-apple-tertiary">
+                <div className="h-80 flex items-center justify-center text-warm-tertiary">
                   <div className="text-center">
-                    <Eye className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>Upload an image to see analysis results</p>
+                    <div className="w-16 h-16 rounded-2xl bg-warm-sand flex items-center justify-center mx-auto mb-4">
+                      <Eye className="w-8 h-8 opacity-50" />
+                    </div>
+                    <p className="font-medium">Upload an image to see analysis results</p>
+                    <p className="text-sm mt-1">Results will appear here</p>
                   </div>
                 </div>
               )}
@@ -263,22 +276,24 @@ export default function Predict() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="space-y-6"
+                  className="space-y-5"
                 >
                   {/* Stenosis Detection Status */}
-                  <div className="card rounded-xl p-4 border border-apple-border">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-apple-secondary">Detection Status</span>
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        result.stenosis ? 'bg-apple-success/10 text-apple-success border border-apple-success/30' : 'bg-apple-gray text-apple-secondary'
+                  <div className="card rounded-xl p-5 border-warm-border">
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-warm-secondary font-medium">Detection Status</span>
+                      <span className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
+                        result.stenosis
+                          ? 'bg-warm-success/10 text-warm-success border border-warm-success/30'
+                          : 'bg-warm-sand text-warm-secondary'
                       }`}>
                         {result.stenosis ? 'Stenosis Detected' : 'No Stenosis'}
                       </span>
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span className="text-apple-secondary">Severity</span>
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${getSeverityClass(result.severity)}`}>
+                      <span className="text-warm-secondary font-medium">Severity</span>
+                      <span className={`px-4 py-1.5 rounded-full text-sm font-semibold ${getSeverityClass(result.severity)}`}>
                         {result.severity.toUpperCase()}
                       </span>
                     </div>
@@ -287,27 +302,27 @@ export default function Predict() {
                   {/* Confidence Score */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-apple-secondary">Confidence Score</span>
-                      <span className="font-semibold" style={{ color: '#1D1D1F' }}>{(result.confidence * 100).toFixed(1)}%</span>
+                      <span className="text-warm-secondary font-medium">Confidence Score</span>
+                      <span className="font-semibold text-warm-text">{(result.confidence * 100).toFixed(1)}%</span>
                     </div>
-                    <div className="h-1 bg-apple-gray rounded-full overflow-hidden">
+                    <div className="h-2 bg-warm-sand rounded-full overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${result.confidence * 100}%` }}
                         transition={{ duration: 0.8, ease: 'easeOut' }}
-                        className="h-full bg-apple-accent"
+                        className="h-full bg-gradient-to-r from-warm-primary to-warm-coral"
                       />
                     </div>
                   </div>
 
                   {/* View Mode Toggle */}
-                  <div className="flex space-x-2">
+                  <div className="flex space-x-2 p-1 bg-warm-sand rounded-xl">
                     <button
                       onClick={() => setViewMode('detection')}
-                      className={`flex-1 py-3 rounded-xl flex items-center justify-center space-x-2 transition-all border ${
+                      className={`flex-1 py-3 rounded-lg flex items-center justify-center space-x-2 transition-all font-medium ${
                         viewMode === 'detection'
-                          ? 'bg-apple-accent text-white border-apple-accent'
-                          : 'bg-apple-surface text-apple-secondary border-apple-border hover:border-apple-accent'
+                          ? 'bg-white text-warm-primary shadow-soft'
+                          : 'text-warm-secondary hover:text-warm-text'
                       }`}
                     >
                       <Eye className="w-5 h-5" />
@@ -315,10 +330,10 @@ export default function Predict() {
                     </button>
                     <button
                       onClick={() => setViewMode('segmentation')}
-                      className={`flex-1 py-3 rounded-xl flex items-center justify-center space-x-2 transition-all border ${
+                      className={`flex-1 py-3 rounded-lg flex items-center justify-center space-x-2 transition-all font-medium ${
                         viewMode === 'segmentation'
-                          ? 'bg-apple-accent text-white border-apple-accent'
-                          : 'bg-apple-surface text-apple-secondary border-apple-border hover:border-apple-accent'
+                          ? 'bg-white text-warm-primary shadow-soft'
+                          : 'text-warm-secondary hover:text-warm-text'
                       }`}
                     >
                       <Layers className="w-5 h-5" />
@@ -332,37 +347,37 @@ export default function Predict() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.05 }}
-                      className="card rounded-xl p-3 border border-apple-border"
+                      className="card rounded-xl p-4 bg-warm-sand/50"
                     >
-                      <p className="text-xs text-apple-secondary mb-1">Model Used</p>
-                      <p className="font-medium" style={{ color: '#1D1D1F' }}>{result.model_used}</p>
+                      <p className="text-xs text-warm-tertiary mb-1">Model Used</p>
+                      <p className="font-semibold text-warm-text">{result.model_used}</p>
                     </motion.div>
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.1 }}
-                      className="card rounded-xl p-3 border border-apple-border"
+                      className="card rounded-xl p-4 bg-warm-sand/50"
                     >
-                      <p className="text-xs text-apple-secondary mb-1">Processing Time</p>
-                      <p className="font-medium" style={{ color: '#1D1D1F' }}>{result.processing_time}s</p>
+                      <p className="text-xs text-warm-tertiary mb-1">Processing Time</p>
+                      <p className="font-semibold text-warm-text">{result.processing_time}s</p>
                     </motion.div>
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.15 }}
-                      className="card rounded-xl p-3 border border-apple-border"
+                      className="card rounded-xl p-4 bg-warm-sand/50"
                     >
-                      <p className="text-xs text-apple-secondary mb-1">Stenosis %</p>
-                      <p className="font-medium" style={{ color: '#1D1D1F' }}>{result.stenosis_percent}%</p>
+                      <p className="text-xs text-warm-tertiary mb-1">Stenosis %</p>
+                      <p className="font-semibold text-warm-text">{result.stenosis_percent}%</p>
                     </motion.div>
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.2 }}
-                      className="card rounded-xl p-3 border border-apple-border"
+                      className="card rounded-xl p-4 bg-warm-sand/50"
                     >
-                      <p className="text-xs text-apple-secondary mb-1">Bounding Box</p>
-                      <p className="font-medium text-xs" style={{ color: '#1D1D1F' }}>
+                      <p className="text-xs text-warm-tertiary mb-1">Bounding Box</p>
+                      <p className="font-semibold text-warm-text text-xs truncate">
                         {result.bbox?.map(b => b.toFixed(0)).join(', ')}
                       </p>
                     </motion.div>
@@ -376,7 +391,7 @@ export default function Predict() {
                   >
                     <button
                       onClick={handleReset}
-                      className="w-full btn-press py-3 rounded-xl flex items-center justify-center space-x-2 bg-apple-gray text-apple-text border border-apple-border hover:border-apple-accent transition-all"
+                      className="w-full btn-secondary py-3.5 rounded-xl flex items-center justify-center space-x-2 font-medium"
                     >
                       <RotateCcw className="w-5 h-5" />
                       <span>Try Another Image</span>
@@ -388,33 +403,33 @@ export default function Predict() {
           </motion.div>
         </div>
 
-        {/* XAI Section - Show when results available */}
+        {/* XAI Section */}
         {result && result.heatmap && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="mt-6"
+            className="mt-8"
           >
             <div className="card rounded-2xl p-6">
-              <h2 className="text-lg font-medium mb-4 flex items-center" style={{ color: '#1D1D1F' }}>
-                <Eye className="w-5 h-5 mr-2 text-apple-accent" />
+              <h2 className="text-lg font-semibold mb-4 flex items-center text-warm-text">
+                <Eye className="w-5 h-5 mr-2 text-warm-primary" />
                 Explainability (Grad-CAM Heatmap)
               </h2>
-              <p className="text-sm text-apple-secondary mb-4">
+              <p className="text-sm text-warm-secondary mb-6">
                 Highlighted regions indicate model attention for stenosis detection.
                 Warmer colors represent higher attention.
               </p>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-apple-secondary mb-2">Original Image</p>
-                  <div className="aspect-video rounded-xl overflow-hidden bg-apple-gray border border-apple-border">
+                  <p className="text-sm text-warm-secondary mb-3 font-medium">Original Image</p>
+                  <div className="aspect-video rounded-xl overflow-hidden bg-warm-sand border border-warm-border">
                     <img src={previewUrl} alt="Original" className="w-full h-full object-contain" />
                   </div>
                 </div>
                 <div>
-                  <p className="text-sm text-apple-secondary mb-2">Grad-CAM Heatmap Overlay</p>
-                  <div className="aspect-video rounded-xl overflow-hidden bg-apple-gray border border-apple-border relative">
+                  <p className="text-sm text-warm-secondary mb-3 font-medium">Grad-CAM Heatmap Overlay</p>
+                  <div className="aspect-video rounded-xl overflow-hidden bg-warm-sand border border-warm-border relative">
                     <img src={previewUrl} alt="Original" className="w-full h-full object-contain opacity-60" />
                     <div
                       className="absolute inset-0"
@@ -422,8 +437,8 @@ export default function Predict() {
                         background: `url(data:image/svg+xml;base64,${btoa(
                           `<svg xmlns='http://www.w3.org/2000/svg' width='400' height='300'>
                             <radialGradient id='grad'>
-                              <stop offset='0%' stop-color='rgba(255,100,100,0.6)' />
-                              <stop offset='50%' stop-color='rgba(255,200,100,0.4)' />
+                              <stop offset='0%' stop-color='rgba(224, 122, 95, 0.6)' />
+                              <stop offset='50%' stop-color='rgba(196, 154, 108, 0.4)' />
                               <stop offset='100%' stop-color='transparent' />
                             </radialGradient>
                             <ellipse cx='200' cy='150' rx='80' ry='60' fill='url(#grad)' />

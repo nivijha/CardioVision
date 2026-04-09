@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { CheckCircle, XCircle, Eye, TrendingUp, AlertTriangle, Target } from 'lucide-react';
+import { CheckCircle, XCircle, Eye, TrendingUp, AlertTriangle, Target, Image as ImageIcon } from 'lucide-react';
 
 const galleryData = {
   good_predictions: [
@@ -77,69 +77,81 @@ const galleryData = {
 };
 
 const severityColors = {
-  mild: 'bg-apple-success text-white',
-  moderate: 'bg-apple-warning text-white',
-  severe: 'bg-apple-danger text-white',
+  mild: 'badge-soft-success',
+  moderate: 'badge-soft-warning',
+  severe: 'badge-soft-danger',
 };
 
 export default function Results() {
   return (
-    <div className="min-h-screen py-8">
+    <div className="min-h-screen py-12 bg-warm-bgAlt">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
+          className="text-center mb-10"
         >
-          <h1 className="text-4xl font-semibold mb-2 tracking-tight" style={{ color: '#1D1D1F' }}>
-            Results Gallery
+          {/*<div className="inline-flex items-center space-x-2 card px-4 py-2 rounded-full mb-4">
+            <ImageIcon className="w-4 h-4 text-warm-primary" />
+            <span className="text-sm text-warm-secondary font-medium">Results Gallery</span>
+          </div>*/}
+          <h1 className="text-4xl md:text-5xl font-semibold mb-3 tracking-tight text-warm-text">
+            Analysis Results
           </h1>
-          <p className="text-apple-secondary">
-            Analysis of model performance across different cases
+          <p className="text-warm-secondary text-lg max-w-2xl mx-auto">
+            Explore model performance across successful detections and challenging cases
           </p>
         </motion.div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="card rounded-xl p-4 text-center spring-hover"
+            className="card rounded-2xl p-6 text-center spring-hover"
           >
-            <CheckCircle className="w-8 h-8 text-apple-success mx-auto mb-2" />
-            <p className="text-2xl font-semibold text-apple-text">{galleryData.good_predictions.length}</p>
-            <p className="text-sm text-apple-secondary">Successful Detections</p>
+            <div className="w-12 h-12 rounded-xl bg-warm-success/10 flex items-center justify-center mx-auto mb-3">
+              <CheckCircle className="w-6 h-6 text-warm-success" />
+            </div>
+            <p className="text-2xl font-semibold text-warm-text">{galleryData.good_predictions.length}</p>
+            <p className="text-sm text-warm-secondary font-medium">Successful Detections</p>
           </motion.div>
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.1 }}
-            className="card rounded-xl p-4 text-center spring-hover"
+            className="card rounded-2xl p-6 text-center spring-hover"
           >
-            <AlertTriangle className="w-8 h-8 text-apple-warning mx-auto mb-2" />
-            <p className="text-2xl font-semibold text-apple-text">{galleryData.failure_cases.length}</p>
-            <p className="text-sm text-apple-secondary">Failure Cases</p>
+            <div className="w-12 h-12 rounded-xl bg-warm-warning/10 flex items-center justify-center mx-auto mb-3">
+              <AlertTriangle className="w-6 h-6 text-warm-warning" />
+            </div>
+            <p className="text-2xl font-semibold text-warm-text">{galleryData.failure_cases.length}</p>
+            <p className="text-sm text-warm-secondary font-medium">Failure Cases</p>
           </motion.div>
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
-            className="card rounded-xl p-4 text-center spring-hover"
+            className="card rounded-2xl p-6 text-center spring-hover"
           >
-            <Target className="w-8 h-8 text-apple-accent mx-auto mb-2" />
-            <p className="text-2xl font-semibold text-apple-text">86.7%</p>
-            <p className="text-sm text-apple-secondary">Best mAP50</p>
+            <div className="w-12 h-12 rounded-xl bg-warm-primary/10 flex items-center justify-center mx-auto mb-3">
+              <Target className="w-6 h-6 text-warm-primary" />
+            </div>
+            <p className="text-2xl font-semibold text-warm-text">86.7%</p>
+            <p className="text-sm text-warm-secondary font-medium">Best mAP50</p>
           </motion.div>
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.3 }}
-            className="card rounded-xl p-4 text-center spring-hover"
+            className="card rounded-2xl p-6 text-center spring-hover"
           >
-            <TrendingUp className="w-8 h-8 text-apple-secondary mx-auto mb-2" />
-            <p className="text-2xl font-semibold text-apple-text">0.79</p>
-            <p className="text-sm text-apple-secondary">Best IoU</p>
+            <div className="w-12 h-12 rounded-xl bg-warm-teal/10 flex items-center justify-center mx-auto mb-3">
+              <TrendingUp className="w-6 h-6 text-warm-teal" />
+            </div>
+            <p className="text-2xl font-semibold text-warm-text">0.79</p>
+            <p className="text-sm text-warm-secondary font-medium">Best IoU</p>
           </motion.div>
         </div>
 
@@ -150,8 +162,10 @@ export default function Results() {
           className="mb-12"
         >
           <div className="flex items-center space-x-3 mb-6">
-            <CheckCircle className="w-6 h-6 text-apple-success" />
-            <h2 className="text-2xl font-semibold" style={{ color: '#1D1D1F' }}>Successful Detections</h2>
+            <div className="w-8 h-8 rounded-lg bg-warm-success/10 flex items-center justify-center">
+              <CheckCircle className="w-5 h-5 text-warm-success" />
+            </div>
+            <h2 className="text-2xl font-semibold text-warm-text">Successful Detections</h2>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {galleryData.good_predictions.map((item, index) => (
@@ -160,29 +174,30 @@ export default function Results() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className="card rounded-xl overflow-hidden spring-hover group"
+                className="card rounded-2xl overflow-hidden spring-hover group"
               >
                 <div className="aspect-square relative overflow-hidden">
                   <img
                     src={item.image}
                     alt={`Case ${item.id}`}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-2">
-                      <Eye className="w-4 h-4 text-apple-accent" />
-                      <span className="font-semibold text-apple-text">{(item.confidence * 100).toFixed(0)}%</span>
+                      <Eye className="w-4 h-4 text-warm-primary" />
+                      <span className="font-semibold text-warm-text">{(item.confidence * 100).toFixed(0)}%</span>
                     </div>
-                    <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${severityColors[item.severity]}`}>
+                    <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-semibold ${severityColors[item.severity]}`}>
                       {item.severity}
                     </span>
                   </div>
-                  <p className="text-sm text-apple-secondary mb-2">{item.observation}</p>
-                  <div className="flex items-center justify-between text-xs text-apple-tertiary">
-                    <span>{item.model}</span>
-                    <CheckCircle className="w-4 h-4 text-apple-success" />
+                  <p className="text-sm text-warm-secondary mb-3 line-clamp-2">{item.observation}</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-warm-tertiary font-medium">{item.model}</span>
+                    <CheckCircle className="w-4 h-4 text-warm-success" />
                   </div>
                 </div>
               </motion.div>
@@ -197,8 +212,10 @@ export default function Results() {
           transition={{ delay: 0.4 }}
         >
           <div className="flex items-center space-x-3 mb-6">
-            <XCircle className="w-6 h-6 text-apple-danger" />
-            <h2 className="text-2xl font-semibold" style={{ color: '#1D1D1F' }}>Failure Cases & Challenges</h2>
+            <div className="w-8 h-8 rounded-lg bg-warm-danger/10 flex items-center justify-center">
+              <XCircle className="w-5 h-5 text-warm-danger" />
+            </div>
+            <h2 className="text-2xl font-semibold text-warm-text">Failure Cases & Challenges</h2>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {galleryData.failure_cases.map((item, index) => (
@@ -207,26 +224,26 @@ export default function Results() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 + index * 0.05 }}
-                className="card rounded-xl overflow-hidden border border-apple-danger/20 spring-hover group"
+                className="card rounded-2xl overflow-hidden border border-warm-danger/20 spring-hover group"
               >
                 <div className="aspect-square relative overflow-hidden">
                   <img
                     src={item.image}
                     alt={`Case ${item.id}`}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
-                  <div className="absolute top-2 right-2 px-2 py-1 rounded bg-apple-danger/90 text-white text-xs font-medium">
+                  <div className="absolute top-3 right-3 px-2.5 py-1.5 rounded-lg bg-warm-danger/90 text-white text-xs font-semibold backdrop-blur-sm">
                     {item.failure_reason}
                   </div>
                 </div>
                 <div className="p-4">
-                  <p className="text-sm text-apple-secondary mb-3">{item.observation}</p>
+                  <p className="text-sm text-warm-secondary mb-3 line-clamp-2">{item.observation}</p>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-apple-tertiary">{item.model}</span>
-                    <span className="text-xs text-apple-danger">{(item.confidence * 100).toFixed(0)}% conf</span>
+                    <span className="text-xs text-warm-tertiary font-medium">{item.model}</span>
+                    <span className="text-xs text-warm-danger font-semibold">{(item.confidence * 100).toFixed(0)}% conf</span>
                   </div>
-                  <div className="flex items-center space-x-1 text-xs text-apple-danger">
-                    <AlertTriangle className="w-3 h-3" />
+                  <div className="flex items-center space-x-1.5 text-xs text-warm-danger font-medium">
+                    <AlertTriangle className="w-3.5 h-3.5" />
                     <span>{item.failure_reason}</span>
                   </div>
                 </div>
@@ -240,56 +257,46 @@ export default function Results() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
-          className="mt-12 card rounded-2xl p-6"
+          className="mt-12 card rounded-3xl p-8"
         >
-          <h3 className="text-xl font-semibold mb-4" style={{ color: '#1D1D1F' }}>Analysis Summary</h3>
-          <div className="grid md:grid-cols-2 gap-6">
+          <h3 className="text-xl font-semibold mb-6 text-warm-text">Analysis Summary</h3>
+          <div className="grid md:grid-cols-2 gap-8">
             <div>
-              <h4 className="text-apple-success font-semibold mb-2 flex items-center">
-                <CheckCircle className="w-4 h-4 mr-2" />
+              <h4 className="text-warm-success font-semibold mb-4 flex items-center text-base">
+                <div className="w-6 h-6 rounded-lg bg-warm-success/10 flex items-center justify-center mr-2">
+                  <CheckCircle className="w-3.5 h-3.5" />
+                </div>
                 Success Factors
               </h4>
-              <ul className="space-y-2 text-sm text-apple-secondary">
-                <li className="flex items-start">
-                  <span className="text-apple-accent mr-2">&bull;</span>
-                  High contrast angiography images yield best results
-                </li>
-                <li className="flex items-start">
-                  <span className="text-apple-accent mr-2">&bull;</span>
-                  YOLOv8m achieves optimal balance of accuracy and speed
-                </li>
-                <li className="flex items-start">
-                  <span className="text-apple-accent mr-2">&bull;</span>
-                  Segmentation models provide better boundary delineation
-                </li>
-                <li className="flex items-start">
-                  <span className="text-apple-accent mr-2">&bull;</span>
-                  Models perform well on moderate to severe cases
-                </li>
+              <ul className="space-y-3 text-sm text-warm-secondary">
+                {['High contrast angiography images yield best results',
+                  'YOLOv8m achieves optimal balance of accuracy and speed',
+                  'Segmentation models provide better boundary delineation',
+                  'Models perform well on moderate to severe cases'].map((item, i) => (
+                  <li key={i} className="flex items-start">
+                    <span className="text-warm-primary mr-3 mt-0.5">&bull;</span>
+                    {item}
+                  </li>
+                ))}
               </ul>
             </div>
             <div>
-              <h4 className="text-apple-danger font-semibold mb-2 flex items-center">
-                <AlertTriangle className="w-4 h-4 mr-2" />
+              <h4 className="text-warm-danger font-semibold mb-4 flex items-center text-base">
+                <div className="w-6 h-6 rounded-lg bg-warm-danger/10 flex items-center justify-center mr-2">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                </div>
                 Common Failure Modes
               </h4>
-              <ul className="space-y-2 text-sm text-apple-secondary">
-                <li className="flex items-start">
-                  <span className="text-apple-accent mr-2">&bull;</span>
-                  Low contrast images reduce detection confidence
-                </li>
-                <li className="flex items-start">
-                  <span className="text-apple-accent mr-2">&bull;</span>
-                  Motion artifacts from patient movement
-                </li>
-                <li className="flex items-start">
-                  <span className="text-apple-accent mr-2">&bull;</span>
-                  Overlapping anatomical structures cause confusion
-                </li>
-                <li className="flex items-start">
-                  <span className="text-apple-accent mr-2">&bull;</span>
-                  Image noise affects smaller model performance
-                </li>
+              <ul className="space-y-3 text-sm text-warm-secondary">
+                {['Low contrast images reduce detection confidence',
+                  'Motion artifacts from patient movement',
+                  'Overlapping anatomical structures cause confusion',
+                  'Image noise affects smaller model performance'].map((item, i) => (
+                  <li key={i} className="flex items-start">
+                    <span className="text-warm-primary mr-3 mt-0.5">&bull;</span>
+                    {item}
+                  </li>
+                ))}
               </ul>
             </div>
           </div>
