@@ -13,6 +13,9 @@ export default function Predict() {
   const [viewMode, setViewMode] = useState('detection');
   const [error, setError] = useState(null);
 
+  const primaryDetection = result?.detections?.[0] || result;
+  const detectionCount = result?.detections?.length || 0;
+
   const stages = [
     { id: 'upload', label: 'Uploading', icon: Upload },
     { id: 'analyze', label: 'Analyzing', icon: Eye },
@@ -293,22 +296,27 @@ export default function Predict() {
 
                     <div className="flex items-center justify-between">
                       <span className="text-warm-secondary font-medium">Severity</span>
-                      <span className={`px-4 py-1.5 rounded-full text-sm font-semibold ${getSeverityClass(result.severity)}`}>
-                        {result.severity.toUpperCase()}
+                      <span className={`px-4 py-1.5 rounded-full text-sm font-semibold ${getSeverityClass(primaryDetection?.severity || result?.severity)}`}>
+                        {(primaryDetection?.severity || result?.severity || 'none').toUpperCase()}
                       </span>
                     </div>
+                    {detectionCount > 1 && (
+                      <p className="text-sm text-warm-secondary mt-2">
+                        {detectionCount} lesion detections identified in this image.
+                      </p>
+                    )}
                   </div>
 
                   {/* Confidence Score */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-warm-secondary font-medium">Confidence Score</span>
-                      <span className="font-semibold text-warm-text">{(result.confidence * 100).toFixed(1)}%</span>
+                      <span className="font-semibold text-warm-text">{((primaryDetection?.confidence ?? result?.confidence ?? 0) * 100).toFixed(1)}%</span>
                     </div>
                     <div className="h-2 bg-warm-sand rounded-full overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
-                        animate={{ width: `${result.confidence * 100}%` }}
+                        animate={{ width: `${(primaryDetection?.confidence ?? result?.confidence ?? 0) * 100}%` }}
                         transition={{ duration: 0.8, ease: 'easeOut' }}
                         className="h-full bg-gradient-to-r from-warm-primary to-warm-coral"
                       />
@@ -383,6 +391,24 @@ export default function Predict() {
                     </motion.div>
                   </div>
 
+                  {detectionCount > 1 && (
+                    <div className="card rounded-xl p-4 bg-warm-sand/50">
+                      <p className="text-sm font-semibold text-warm-text mb-3">Detected Lesions</p>
+                      <div className="space-y-3">
+                        {result.detections.map((det, idx) => (
+                          <div key={idx} className="p-3 rounded-xl bg-white border border-warm-border">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-semibold text-warm-text">Lesion {idx + 1}</span>
+                              <span className="text-xs text-warm-secondary">{(det.confidence * 100).toFixed(0)}% conf</span>
+                            </div>
+                            <p className="text-sm text-warm-secondary mb-1">Severity: {det.severity}</p>
+                            <p className="text-sm text-warm-secondary">Stenosis: {det.stenosis_percent}%</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Try Another Button */}
                   <motion.div
                     initial={{ opacity: 0 }}
@@ -403,8 +429,8 @@ export default function Predict() {
           </motion.div>
         </div>
 
-        {/* XAI Section */}
-        {result && result.heatmap && (
+        {/* XAI & Segmentation Section */}
+        {result && (result.heatmap_b64 || result.mask_b64) && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -414,42 +440,43 @@ export default function Predict() {
             <div className="card rounded-2xl p-6">
               <h2 className="text-lg font-semibold mb-4 flex items-center text-warm-text">
                 <Eye className="w-5 h-5 mr-2 text-warm-primary" />
-                Explainability (Grad-CAM Heatmap)
+                AI Analysis Overlays
               </h2>
               <p className="text-sm text-warm-secondary mb-6">
-                Highlighted regions indicate model attention for stenosis detection.
-                Warmer colors represent higher attention.
+                Left: Grad-CAM attention heatmap — warmer regions indicate higher model focus.<br />
+                Right: YOLOv8 segmentation mask — pixel-precise stenosis boundary.
               </p>
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-3 gap-4">
                 <div>
                   <p className="text-sm text-warm-secondary mb-3 font-medium">Original Image</p>
                   <div className="aspect-video rounded-xl overflow-hidden bg-warm-sand border border-warm-border">
                     <img src={previewUrl} alt="Original" className="w-full h-full object-contain" />
                   </div>
                 </div>
-                <div>
-                  <p className="text-sm text-warm-secondary mb-3 font-medium">Grad-CAM Heatmap Overlay</p>
-                  <div className="aspect-video rounded-xl overflow-hidden bg-warm-sand border border-warm-border relative">
-                    <img src={previewUrl} alt="Original" className="w-full h-full object-contain opacity-60" />
-                    <div
-                      className="absolute inset-0"
-                      style={{
-                        background: `url(data:image/svg+xml;base64,${btoa(
-                          `<svg xmlns='http://www.w3.org/2000/svg' width='400' height='300'>
-                            <radialGradient id='grad'>
-                              <stop offset='0%' stop-color='rgba(224, 122, 95, 0.6)' />
-                              <stop offset='50%' stop-color='rgba(196, 154, 108, 0.4)' />
-                              <stop offset='100%' stop-color='transparent' />
-                            </radialGradient>
-                            <ellipse cx='200' cy='150' rx='80' ry='60' fill='url(#grad)' />
-                          </svg>`
-                        )})`,
-                        backgroundSize: '100% 100%',
-                        mixBlendMode: 'overlay'
-                      }}
-                    />
+                {result.heatmap_b64 && (
+                  <div>
+                    <p className="text-sm text-warm-secondary mb-3 font-medium">Grad-CAM Heatmap</p>
+                    <div className="aspect-video rounded-xl overflow-hidden bg-warm-sand border border-warm-border">
+                      <img
+                        src={`data:image/png;base64,${result.heatmap_b64}`}
+                        alt="Heatmap Overlay"
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
+                {result.mask_b64 && (
+                  <div>
+                    <p className="text-sm text-warm-secondary mb-3 font-medium">Segmentation Mask</p>
+                    <div className="aspect-video rounded-xl overflow-hidden bg-warm-sand border border-warm-border">
+                      <img
+                        src={`data:image/png;base64,${result.mask_b64}`}
+                        alt="Segmentation Mask"
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>
