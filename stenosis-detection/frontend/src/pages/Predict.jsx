@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, X, Eye, Layers, Download, RotateCcw, CheckCircle, AlertCircle, Image as ImageIcon, FileCheck } from 'lucide-react';
@@ -11,10 +11,34 @@ export default function Predict() {
   const [processingStage, setProcessingStage] = useState('');
   const [result, setResult] = useState(null);
   const [viewMode, setViewMode] = useState('detection');
+  const [selectedModel, setSelectedModel] = useState('YOLOv8m');
   const [error, setError] = useState(null);
 
   const primaryDetection = result?.detections?.[0] || result;
   const detectionCount = result?.detections?.length || 0;
+
+  const detectionModels = [
+    { id: 'YOLOv8n', name: 'YOLOv8 Nano', description: 'Fastest, lightweight model' },
+    { id: 'YOLOv8s', name: 'YOLOv8 Small', description: 'Balanced speed and accuracy' },
+    { id: 'YOLOv8m', name: 'YOLOv8 Medium', description: 'High accuracy, standard choice' },
+  ];
+
+  const segmentationModels = [
+    { id: 'YOLOv8n-seg', name: 'YOLOv8 Nano-Seg', description: 'Fast segmentation model' },
+    { id: 'YOLOv8s-seg', name: 'YOLOv8 Small-Seg', description: 'Balanced segmentation' },
+    { id: 'YOLOv8m-seg', name: 'YOLOv8 Medium-Seg', description: 'High accuracy segmentation' },
+  ];
+
+  const currentModels = viewMode === 'detection' ? detectionModels : segmentationModels;
+
+  useEffect(() => {
+    // Update selected model when view mode changes
+    if (viewMode === 'detection') {
+      setSelectedModel('YOLOv8m');
+    } else if (viewMode === 'segmentation') {
+      setSelectedModel('YOLOv8m-seg');
+    }
+  }, [viewMode]);
 
   const stages = [
     { id: 'upload', label: 'Uploading', icon: Upload },
@@ -22,27 +46,7 @@ export default function Predict() {
     { id: 'complete', label: 'Complete', icon: CheckCircle },
   ];
 
-  const onDrop = useCallback(async (acceptedFiles) => {
-    const file = acceptedFiles[0];
-    if (!file) return;
-
-    setSelectedFile(file);
-    setPreviewUrl(URL.createObjectURL(file));
-    setResult(null);
-    setError(null);
-
-    await handlePredict(file);
-  }, []);
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'image/*': ['.png', '.jpg', '.jpeg', '.bmp', '.tiff'],
-    },
-    multiple: false,
-  });
-
-  const handlePredict = async (file) => {
+  const handlePredict = useCallback(async (file) => {
     setLoading(true);
     setError(null);
     setProcessingStage('upload');
@@ -53,6 +57,7 @@ export default function Predict() {
 
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('model', selectedModel);
 
       const response = await axios.post('http://localhost:8000/predict', formData, {
         headers: {
@@ -70,7 +75,48 @@ export default function Predict() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedModel]);
+
+  const onDrop = useCallback(async (acceptedFiles) => {
+    const file = acceptedFiles[0];
+    if (!file) return;
+
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+    setResult(null);
+    setError(null);
+
+    await handlePredict(file);
+  }, [handlePredict]);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'image/*': ['.png', '.jpg', '.jpeg', '.bmp', '.tiff'],
+    },
+    multiple: false,
+  });
+
+  const prevModelRef = useRef(selectedModel);
+
+  useEffect(() => {
+    if (selectedFile && !loading && result && prevModelRef.current !== selectedModel) {
+      handlePredict(selectedFile);
+    }
+    prevModelRef.current = selectedModel;
+  }, [selectedModel, selectedFile, loading, result, handlePredict]);
+
+  // Auto-scroll to heatmap when available
+  useEffect(() => {
+    if (result && (result.overlay_b64 || result.heatmap_b64)) {
+      setTimeout(() => {
+        const heatmapSection = document.querySelector('[data-heatmap-section]');
+        if (heatmapSection) {
+          heatmapSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    }
+  }, [result]);
 
   const handleReset = () => {
     setSelectedFile(null);
@@ -281,7 +327,6 @@ export default function Predict() {
                   animate={{ opacity: 1 }}
                   className="space-y-5"
                 >
-                  {/* Stenosis Detection Status */}
                   <div className="card rounded-xl p-5 border-warm-border">
                     <div className="flex items-center justify-between mb-4">
                       <span className="text-warm-secondary font-medium">Detection Status</span>
@@ -294,122 +339,104 @@ export default function Predict() {
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <span className="text-warm-secondary font-medium">Severity</span>
-                      <span className={`px-4 py-1.5 rounded-full text-sm font-semibold ${getSeverityClass(primaryDetection?.severity || result?.severity)}`}>
-                        {(primaryDetection?.severity || result?.severity || 'none').toUpperCase()}
-                      </span>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-warm-secondary font-medium">Stenosis %</span>
+                      <span className="font-semibold text-warm-text">{(result.stenosis_percent ?? 0).toFixed(1)}%</span>
                     </div>
-                    {detectionCount > 1 && (
-                      <p className="text-sm text-warm-secondary mt-2">
-                        {detectionCount} lesion detections identified in this image.
-                      </p>
-                    )}
-                  </div>
 
-                  {/* Confidence Score */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-warm-secondary font-medium">Confidence Score</span>
-                      <span className="font-semibold text-warm-text">{((primaryDetection?.confidence ?? result?.confidence ?? 0) * 100).toFixed(1)}%</span>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-warm-secondary font-medium">Severity</span>
+                        <span
+                          className={`px-4 py-1.5 rounded-full text-sm font-semibold ${getSeverityClass(primaryDetection?.severity || result?.severity)}`}
+                        >
+                          {(primaryDetection?.severity || result?.severity || 'none').toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="p-3 rounded-lg bg-warm-sand/50 border border-warm-border">
+                        <p className="text-xs text-warm-secondary leading-relaxed">
+                          <strong>How Severity is Calculated:</strong><br />
+                          Severity is estimated from the stenosis percentage based on clinical thresholds:<br />
+                          • <strong>Minimal:</strong> &lt; 25%<br />
+                          • <strong>Mild:</strong> 25–50%<br />
+                          • <strong>Moderate:</strong> 50–70%<br />
+                          • <strong>Severe:</strong> 70–90%<br />
+                          • <strong>Occlusion:</strong> &gt; 90%
+                        </p>
+                      </div>
                     </div>
-                    <div className="h-2 bg-warm-sand rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${(primaryDetection?.confidence ?? result?.confidence ?? 0) * 100}%` }}
-                        transition={{ duration: 0.8, ease: 'easeOut' }}
-                        className="h-full bg-gradient-to-r from-warm-primary to-warm-coral"
-                      />
+
+                    <div className="mt-4 text-sm text-warm-secondary">
+                      Detected lesions: <span className="font-semibold text-warm-text">{detectionCount}</span>
                     </div>
                   </div>
 
-                  {/* View Mode Toggle */}
-                  <div className="flex space-x-2 p-1 bg-warm-sand rounded-xl">
-                    <button
-                      onClick={() => setViewMode('detection')}
-                      className={`flex-1 py-3 rounded-lg flex items-center justify-center space-x-2 transition-all font-medium ${
-                        viewMode === 'detection'
-                          ? 'bg-white text-warm-primary shadow-soft'
-                          : 'text-warm-secondary hover:text-warm-text'
-                      }`}
-                    >
-                      <Eye className="w-5 h-5" />
-                      <span>Detection</span>
-                    </button>
-                    <button
-                      onClick={() => setViewMode('segmentation')}
-                      className={`flex-1 py-3 rounded-lg flex items-center justify-center space-x-2 transition-all font-medium ${
-                        viewMode === 'segmentation'
-                          ? 'bg-white text-warm-primary shadow-soft'
-                          : 'text-warm-secondary hover:text-warm-text'
-                      }`}
-                    >
-                      <Layers className="w-5 h-5" />
-                      <span>Segmentation</span>
-                    </button>
-                  </div>
-
-                  {/* Metrics Grid */}
-                  <div className="grid grid-cols-2 gap-3">
+                  {result.overlay_b64 || result.heatmap_b64 ? (
                     <motion.div
-                      initial={{ opacity: 0, y: 10 }}
+                      data-heatmap-section
+                      initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.05 }}
-                      className="card rounded-xl p-4 bg-warm-sand/50"
+                      className="card rounded-xl p-5 border-warm-border"
                     >
-                      <p className="text-xs text-warm-tertiary mb-1">Model Used</p>
-                      <p className="font-semibold text-warm-text">{result.model_used}</p>
-                    </motion.div>
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 }}
-                      className="card rounded-xl p-4 bg-warm-sand/50"
-                    >
-                      <p className="text-xs text-warm-tertiary mb-1">Processing Time</p>
-                      <p className="font-semibold text-warm-text">{result.processing_time}s</p>
-                    </motion.div>
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.15 }}
-                      className="card rounded-xl p-4 bg-warm-sand/50"
-                    >
-                      <p className="text-xs text-warm-tertiary mb-1">Stenosis %</p>
-                      <p className="font-semibold text-warm-text">{result.stenosis_percent}%</p>
-                    </motion.div>
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 }}
-                      className="card rounded-xl p-4 bg-warm-sand/50"
-                    >
-                      <p className="text-xs text-warm-tertiary mb-1">Bounding Box</p>
-                      <p className="font-semibold text-warm-text text-xs truncate">
-                        {result.bbox?.map(b => b.toFixed(0)).join(', ')}
-                      </p>
-                    </motion.div>
-                  </div>
-
-                  {detectionCount > 1 && (
-                    <div className="card rounded-xl p-4 bg-warm-sand/50">
-                      <p className="text-sm font-semibold text-warm-text mb-3">Detected Lesions</p>
-                      <div className="space-y-3">
-                        {result.detections.map((det, idx) => (
-                          <div key={idx} className="p-3 rounded-xl bg-white border border-warm-border">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="font-semibold text-warm-text">Lesion {idx + 1}</span>
-                              <span className="text-xs text-warm-secondary">{(det.confidence * 100).toFixed(0)}% conf</span>
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-warm-secondary font-medium">Region Intensity Heatmap</span>
+                        <span className="text-xs text-warm-tertiary">Detection confidence-weighted map</span>
+                      </div>
+                      {result.overlay_b64 ? (
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-xs text-warm-tertiary mb-2">Heatmap Overlay (JET colormap)</p>
+                            <div className="aspect-video rounded-xl overflow-hidden bg-warm-sand border border-warm-border">
+                              <img
+                                src={`data:image/png;base64,${result.overlay_b64}`}
+                                alt="Heatmap overlay"
+                                className="w-full h-full object-contain"
+                              />
                             </div>
-                            <p className="text-sm text-warm-secondary mb-1">Severity: {det.severity}</p>
-                            <p className="text-sm text-warm-secondary">Stenosis: {det.stenosis_percent}%</p>
                           </div>
-                        ))}
+                          {result.heatmap_b64 && (
+                            <div>
+                              <p className="text-xs text-warm-tertiary mb-2">Raw Heatmap</p>
+                              <div className="aspect-video rounded-xl overflow-hidden bg-warm-sand border border-warm-border">
+                                <img
+                                  src={`data:image/png;base64,${result.heatmap_b64}`}
+                                  alt="Raw heatmap"
+                                  className="w-full h-full object-contain"
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="p-4 rounded-lg bg-warm-warning/10 border border-warm-warning/30 text-center">
+                          <p className="text-sm text-warm-secondary">Heatmap data received but not rendering properly. Check browser console for details.</p>
+                        </div>
+                      )}
+                    </motion.div>
+                  ) : (
+                    <div className="card rounded-xl p-5 border-warm-border">
+                      <p className="text-xs text-warm-tertiary text-center py-6">
+                        ℹ️ Heatmap generation in progress or not available for this detection
+                      </p>
+                    </div>
+                  )}
+
+                  {viewMode === 'segmentation' && result.mask_b64 && (
+                    <div className="card rounded-xl p-5 border-warm-border">
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-warm-secondary font-medium">Segmented Artery</span>
+                        <span className="text-xs text-warm-tertiary">Visible mask overlay</span>
+                      </div>
+                      <div className="aspect-video rounded-xl overflow-hidden bg-warm-sand border border-warm-border">
+                        <img
+                          src={`data:image/png;base64,${result.mask_b64}`}
+                          alt="Segmentation mask"
+                          className="w-full h-full object-contain"
+                        />
                       </div>
                     </div>
                   )}
 
-                  {/* Try Another Button */}
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -428,59 +455,6 @@ export default function Predict() {
             </div>
           </motion.div>
         </div>
-
-        {/* XAI & Segmentation Section */}
-        {result && (result.heatmap_b64 || result.mask_b64) && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="mt-8"
-          >
-            <div className="card rounded-2xl p-6">
-              <h2 className="text-lg font-semibold mb-4 flex items-center text-warm-text">
-                <Eye className="w-5 h-5 mr-2 text-warm-primary" />
-                AI Analysis Overlays
-              </h2>
-              <p className="text-sm text-warm-secondary mb-6">
-                Left: Grad-CAM attention heatmap — warmer regions indicate higher model focus.<br />
-                Right: YOLOv8 segmentation mask — pixel-precise stenosis boundary.
-              </p>
-              <div className="grid md:grid-cols-3 gap-4">
-                <div>
-                  <p className="text-sm text-warm-secondary mb-3 font-medium">Original Image</p>
-                  <div className="aspect-video rounded-xl overflow-hidden bg-warm-sand border border-warm-border">
-                    <img src={previewUrl} alt="Original" className="w-full h-full object-contain" />
-                  </div>
-                </div>
-                {result.heatmap_b64 && (
-                  <div>
-                    <p className="text-sm text-warm-secondary mb-3 font-medium">Grad-CAM Heatmap</p>
-                    <div className="aspect-video rounded-xl overflow-hidden bg-warm-sand border border-warm-border">
-                      <img
-                        src={`data:image/png;base64,${result.heatmap_b64}`}
-                        alt="Heatmap Overlay"
-                        className="w-full h-full object-contain"
-                      />
-                    </div>
-                  </div>
-                )}
-                {result.mask_b64 && (
-                  <div>
-                    <p className="text-sm text-warm-secondary mb-3 font-medium">Segmentation Mask</p>
-                    <div className="aspect-video rounded-xl overflow-hidden bg-warm-sand border border-warm-border">
-                      <img
-                        src={`data:image/png;base64,${result.mask_b64}`}
-                        alt="Segmentation Mask"
-                        className="w-full h-full object-contain"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        )}
       </div>
     </div>
   );

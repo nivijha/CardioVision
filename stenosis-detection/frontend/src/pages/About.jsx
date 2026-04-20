@@ -57,7 +57,7 @@ const technologies = [
   { name: 'PyTorch', category: 'Framework' },
   { name: 'FastAPI', category: 'Backend' },
   { name: 'React', category: 'Frontend' },
-  { name: 'Grad-CAM', category: 'XAI' },
+  { name: 'PyTorch Explainability', category: 'XAI' },
   { name: 'OpenCV', category: 'Processing' },
 ];
 

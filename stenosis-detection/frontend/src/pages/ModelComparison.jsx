@@ -2,18 +2,46 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { TrendingUp, Target, Activity, Zap, Award, Layers } from 'lucide-react';
-import axios from 'axios';
+import { getModelComparison } from '../utils/api';
+
+const datasetResults = {
+  ARCADE: {
+    detection: [
+      { name: 'YOLOv8n', map50: 0.782, precision: 0.81, recall: 0.74, params_millions: 3.0, inference_time_ms: 12 },
+      { name: 'YOLOv8s', map50: 0.823, precision: 0.85, recall: 0.79, params_millions: 11.2, inference_time_ms: 23 },
+      { name: 'YOLOv8m', map50: 0.867, precision: 0.89, recall: 0.84, params_millions: 25.9, inference_time_ms: 45 },
+    ],
+    segmentation: [
+      { name: 'YOLOv8n-seg', map50: 0.758, precision: 0.78, recall: 0.71, iou: 0.68, params_millions: 3.2, inference_time_ms: 15 },
+      { name: 'YOLOv8s-seg', map50: 0.801, precision: 0.82, recall: 0.76, iou: 0.73, params_millions: 11.8, inference_time_ms: 28 },
+      { name: 'YOLOv8m-seg', map50: 0.849, precision: 0.87, recall: 0.82, iou: 0.79, params_millions: 27.3, inference_time_ms: 52 },
+    ],
+  },
+  CADICA: {
+    detection: [
+      { name: 'YOLOv8n', map50: null, precision: null, recall: null, params_millions: 3.0, inference_time_ms: 12 },
+      { name: 'YOLOv8s', map50: null, precision: null, recall: null, params_millions: 11.2, inference_time_ms: 23 },
+      { name: 'YOLOv8m', map50: null, precision: null, recall: null, params_millions: 25.9, inference_time_ms: 45 },
+    ],
+    segmentation: [
+      { name: 'YOLOv8n-seg', map50: null, precision: null, recall: null, iou: null, params_millions: 3.2, inference_time_ms: 15 },
+      { name: 'YOLOv8s-seg', map50: null, precision: null, recall: null, iou: null, params_millions: 11.8, inference_time_ms: 28 },
+      { name: 'YOLOv8m-seg', map50: null, precision: null, recall: null, iou: null, params_millions: 27.3, inference_time_ms: 52 },
+    ],
+  },
+};
 
 export default function ModelComparison() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [viewType, setViewType] = useState('detection');
+  const [dataset, setDataset] = useState('ARCADE');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/api/models/comparison');
-        setData(response.data);
+        const response = await getModelComparison();
+        setData(response);
       } catch (error) {
         console.error('Error fetching model comparison:', error);
         setData({
@@ -32,6 +60,7 @@ export default function ModelComparison() {
         setLoading(false);
       }
     };
+
     fetchData();
   }, []);
 
@@ -50,15 +79,23 @@ export default function ModelComparison() {
   }
 
   const currentData = viewType === 'detection' ? data.detection_models : data.segmentation_models;
+  const datasetData = datasetResults[dataset][viewType];
+  const isDatasetPending = dataset === 'CADICA';
 
   const chartData = currentData.map(model => ({
     name: model.name.replace('YOLOv8', 'v8').replace('-seg', '-S'),
-    mAP50: (model.map50 * 100).toFixed(1),
-    precision: (model.precision * 100).toFixed(1),
-    recall: (model.recall * 100).toFixed(1),
-    iou: model.iou ? (model.iou * 100).toFixed(1) : null,
+    mAP50: model.map50 != null ? (model.map50 * 100).toFixed(1) : 0,
+    precision: model.precision != null ? (model.precision * 100).toFixed(1) : 0,
+    recall: model.recall != null ? (model.recall * 100).toFixed(1) : 0,
+    iou: model.iou != null ? (model.iou * 100).toFixed(1) : null,
     params: model.params_millions,
     inference: model.inference_time_ms,
+  }));
+
+  const datasetChartData = datasetData.map(model => ({
+    name: model.name.replace('YOLOv8', 'v8').replace('-seg', '-S'),
+    mAP50: model.map50 != null ? (model.map50 * 100).toFixed(1) : null,
+    iou: model.iou != null ? (model.iou * 100).toFixed(1) : null,
   }));
 
   const getBestValue = (key) => {
@@ -268,6 +305,118 @@ export default function ModelComparison() {
               <Bar dataKey="inference" fill="#E07A5F" radius={[0, 8, 8, 0]} />
             </BarChart>
           </ResponsiveContainer>
+        </motion.div>
+
+        {/* Dataset-Specific Results */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="card rounded-2xl p-6 mb-8"
+        >
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-semibold text-warm-text">Dataset-Specific Results</h3>
+              <p className="text-sm text-warm-secondary mt-2">
+                ARCADE training outputs are shown here for both detection and segmentation. CADICA results are currently pending.
+              </p>
+            </div>
+            <div className="inline-flex rounded-xl bg-warm-sand/90 p-1">
+              {['ARCADE', 'CADICA'].map((label) => (
+                <button
+                  key={label}
+                  onClick={() => setDataset(label)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    dataset === label
+                      ? 'bg-gradient-to-r from-warm-primary to-warm-coral text-white shadow-soft'
+                      : 'text-warm-secondary hover:text-warm-text'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-4 mb-6">
+            <div className="card rounded-2xl p-5 bg-warm-sand/50">
+              <p className="text-xs text-warm-tertiary uppercase tracking-wider mb-2">Dataset</p>
+              <p className="text-xl font-semibold text-warm-text">{dataset}</p>
+            </div>
+            <div className="card rounded-2xl p-5 bg-warm-sand/50">
+              <p className="text-xs text-warm-tertiary uppercase tracking-wider mb-2">Mode</p>
+              <p className="text-xl font-semibold text-warm-text">{viewType === 'detection' ? 'Detection' : 'Segmentation'}</p>
+            </div>
+            <div className="card rounded-2xl p-5 bg-warm-sand/50">
+              <p className="text-xs text-warm-tertiary uppercase tracking-wider mb-2">Status</p>
+              <p className="text-xl font-semibold text-warm-text">{dataset === 'CADICA' ? 'Pending' : 'Trained'}</p>
+            </div>
+          </div>
+
+          {dataset === 'CADICA' ? (
+            <div className="rounded-2xl border border-warm-border bg-warm-sand/70 p-6 text-warm-secondary">
+              <p className="text-sm">
+                CADICA model evaluation is being prepared and published after the next training run. The charts below will update once CADICA performance data is available.
+              </p>
+            </div>
+          ) : (
+            <div className="grid lg:grid-cols-2 gap-6">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="card rounded-2xl p-6"
+              >
+                <h4 className="text-md font-semibold text-warm-text mb-4">Model Performance on {dataset}</h4>
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart data={datasetChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E8E0D9" />
+                    <XAxis dataKey="name" stroke="#8B7E74" fontSize={12} />
+                    <YAxis stroke="#8B7E74" fontSize={12} domain={[0, 100]} />
+                    <Tooltip
+                      contentStyle={{
+                        background: '#FFFFFF',
+                        border: '1px solid #E8E0D9',
+                        borderRadius: '12px',
+                        boxShadow: '0 4px 16px rgba(92, 68, 49, 0.1)',
+                      }}
+                      labelStyle={{ color: '#2D2A26', fontWeight: 600 }}
+                    />
+                    <Bar dataKey="mAP50" fill="#C49A6C" radius={[8, 8, 0, 0]} name="mAP50" />
+                    {viewType === 'segmentation' && <Bar dataKey="iou" fill="#A4B494" radius={[8, 8, 0, 0]} name="IoU" />}
+                  </BarChart>
+                </ResponsiveContainer>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="card rounded-2xl p-6"
+              >
+                <h4 className="text-md font-semibold text-warm-text mb-4">Dataset Breakdown</h4>
+                <div className="space-y-4">
+                  {datasetChartData.map((item) => (
+                    <div key={item.name} className="rounded-2xl bg-warm-sand/80 p-4 border border-warm-border">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-semibold text-warm-text">{item.name}</span>
+                        <span className="text-sm text-warm-secondary">{viewType === 'segmentation' ? 'Segmentation' : 'Detection'}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 text-sm text-warm-secondary">
+                        <div>
+                          <p className="font-semibold text-warm-text">mAP50</p>
+                          <p>{item.mAP50 != null ? `${item.mAP50}%` : 'Pending'}</p>
+                        </div>
+                        {viewType === 'segmentation' && (
+                          <div>
+                            <p className="font-semibold text-warm-text">IoU</p>
+                            <p>{item.iou != null ? `${item.iou}%` : 'Pending'}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            </div>
+          )}
         </motion.div>
 
         {/* Detailed Metrics Table */}

@@ -6,8 +6,6 @@ import { Heart, Menu, X, ChevronRight } from 'lucide-react';
 const navItems = [
   { path: '/', label: 'Home' },
   { path: '/predict', label: 'Predict' },
-  { path: '/models', label: 'Models' },
-  { path: '/results', label: 'Results' },
   { path: '/research', label: 'Research' },
   { path: '/about', label: 'About' },
 ];

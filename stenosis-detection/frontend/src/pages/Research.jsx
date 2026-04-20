@@ -90,7 +90,7 @@ export default function Research() {
             family of models. We evaluated six variants of YOLOv8—three detection models (YOLOv8n, YOLOv8s, YOLOv8m) and
             three segmentation models (YOLOv8n-seg, YOLOv8s-seg, YOLOv8m-seg)—on the ARCADE dataset. Our results demonstrate
             that YOLOv8m achieves the highest detection performance with an mAP50 of 86.7%, while YOLOv8m-seg provides
-            superior segmentation with an IoU of 0.79. We further incorporate Explainable AI (XAI) techniques using Grad-CAM
+            superior segmentation with an IoU of 0.79. We further incorporate Explainable AI (XAI) techniques using PyTorch-based explainability
             heatmaps to provide visual interpretability of model decisions. This work contributes to the growing field of
             AI-assisted cardiovascular diagnosis by offering a robust, real-time solution for stenosis analysis with
             clinically interpretable outputs.
@@ -141,7 +141,7 @@ export default function Research() {
             <ul className="list-disc list-inside space-y-2 ml-4">
               <li>Comprehensive evaluation of multiple YOLOv8 variants for stenosis detection</li>
               <li>Instance segmentation analysis for precise stenosis boundary delineation</li>
-              <li>Integration of Grad-CAM explainability for clinical interpretability</li>
+              <li>Integration of PyTorch-based explainability for clinical interpretability</li>
               <li>Public benchmark results on the ARCADE dataset for future research comparison</li>
             </ul>
           </div>
@@ -168,7 +168,7 @@ export default function Research() {
               <p className="leading-relaxed">
                 Our methodology consists of four main stages: (1) data preprocessing and augmentation, (2) model training
                 with optimized hyperparameters, (3) inference and post-processing, and (4) explainability analysis using
-                Grad-CAM. The pipeline is designed to handle the unique challenges of coronary angiography images,
+                PyTorch-based explainability. The pipeline is designed to handle the unique challenges of coronary angiography images,
                 including low contrast, motion artifacts, and complex anatomical structures.
               </p>
             </div>
@@ -221,10 +221,14 @@ export default function Research() {
               available collection of coronary angiography images annotated by experienced cardiologists. The dataset
               contains images from multiple views (LAO, RAO, cranial, caudal) with varying degrees of stenosis severity.
             </p>
+            <p>
+              We are also preparing evaluation on the CADICA dataset. CADICA results are pending and will be added once
+              the full training and validation pass is complete.
+            </p>
             <div className="grid sm:grid-cols-3 gap-4 mt-4">
               {[
-                { value: '2,847', label: 'Total Images' },
-                { value: '1,523', label: 'Stenosis Cases' },
+                { value: '2,847', label: 'Total ARCADE Images' },
+                { value: '1,523', label: 'Annotated Stenosis Cases' },
                 { value: '80/20', label: 'Train/Test Split' },
               ].map((stat, i) => (
                 <div key={i} className="card rounded-xl p-5 text-center bg-warm-sand/50">
@@ -320,9 +324,14 @@ export default function Research() {
               </p>
             </div>
             <div>
+              <p className="text-sm text-warm-secondary bg-warm-sand/70 p-4 rounded-2xl border border-warm-border">
+                CADICA dataset evaluation is underway; these results represent the ARCADE dataset outputs. CADICA metrics will be added once the model training and validation are complete.
+              </p>
+            </div>
+            <div>
               <h3 className="text-lg font-medium mb-3 text-warm-text">Explainability Analysis</h3>
               <p className="leading-relaxed">
-                Grad-CAM heatmaps revealed that models primarily attend to the stenotic regions and adjacent vessel
+                PyTorch-based explainability heatmaps revealed that models primarily attend to the stenotic regions and adjacent vessel
                 segments, aligning with cardiologist interpretation patterns. This visual interpretability enhances
                 clinical trust and facilitates error analysis.
               </p>

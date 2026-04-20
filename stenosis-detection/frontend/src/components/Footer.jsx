@@ -1,4 +1,4 @@
-import { Heart, Github, Linkedin, Mail, Sparkles } from 'lucide-react';
+import { Heart, Github, Linkedin, Mail } from 'lucide-react';
 
 const socialLinks = [
   { icon: Github, href: '#', label: 'GitHub' },
@@ -34,8 +34,7 @@ export default function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h4 className="text-sm font-semibold text-warm-text mb-4 flex items-center">
-              {/*<Sparkles className="w-4 h-4 mr-2 text-warm-primary" />*/}
+            <h4 className="text-sm font-semibold text-warm-text mb-4">
               Navigate
             </h4>
             <ul className="space-y-2.5 text-sm">
@@ -47,11 +46,6 @@ export default function Footer() {
               <li>
                 <a href="/models" className="text-warm-secondary hover:text-warm-primary transition-colors">
                   Model Comparison
-                </a>
-              </li>
-              <li>
-                <a href="/results" className="text-warm-secondary hover:text-warm-primary transition-colors">
-                  Results Gallery
                 </a>
               </li>
               <li>
