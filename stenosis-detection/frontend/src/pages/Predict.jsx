@@ -8,6 +8,7 @@ export default function Predict() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const [imgDim, setImgDim] = useState({ w: 0, h: 0 });
 
   const selectedModel = 'YOLOv8s-seg';
   const prevModelRef = useRef(selectedModel);
@@ -57,6 +58,7 @@ export default function Predict() {
     setPreviewUrl(URL.createObjectURL(file));
     setResult(null);
     setError(null);
+    setImgDim({ w: 0, h: 0 });
 
     await handlePredict(file);
   }, [handlePredict]);
@@ -77,6 +79,7 @@ export default function Predict() {
     setPreviewUrl(null);
     setResult(null);
     setError(null);
+    setImgDim({ w: 0, h: 0 });
   };
 
   const isSevere = primaryDetection?.severity === 'severe';
@@ -123,7 +126,7 @@ export default function Predict() {
                 </div>
               ) : (
                 <div className="border border-gray-200 bg-gray-50 flex-1 relative flex items-center justify-center overflow-hidden min-h-[400px]">
-                  <img src={previewUrl} alt="Source" className="object-contain w-full h-full p-2" />
+                  <img src={previewUrl} onLoad={(e) => setImgDim({ w: e.target.naturalWidth, h: e.target.naturalHeight })} alt="Source" className="object-contain w-full h-full p-2" />
                   {loading && (
                     <div className="absolute inset-0 bg-white/95 flex flex-col items-center justify-center">
                       <div className="w-10 h-10 border-[4px] border-gray-200 border-t-red-600 rounded-full animate-spin mb-4"></div>
@@ -222,11 +225,37 @@ export default function Predict() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Vessel Segmentation */}
                     <div className="h-64 border border-gray-200 bg-gray-100 flex flex-col items-center overflow-hidden">
-                      {result.segmentation_b64 ? (
+                      {result.mask_b64 ? (
                         <>
-                          <div className="w-full bg-gray-200 py-1.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-300 flex-shrink-0">Vessel Segmentation</div>
-                          <div className="flex-1 w-full relative p-2">
-                            <img src={`data:image/png;base64,${result.segmentation_b64}`} className="absolute inset-0 w-full h-full object-contain p-2" alt="Segmentation Result" />
+                          <div className="w-full bg-gray-200 py-1.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-300 flex-shrink-0 z-10">Vessel Segmentation</div>
+                          <div className="flex-1 w-full relative p-2 bg-black overflow-hidden">
+                            <img src={previewUrl} className="absolute inset-0 w-full h-full object-contain p-2" alt="Source Image" />
+                            <img src={`data:image/png;base64,${result.mask_b64}`} className="absolute inset-0 w-full h-full object-contain p-2 opacity-50 mix-blend-screen" alt="Segmentation Result" />
+                            {imgDim.w > 0 && result.detections && (
+                              <svg viewBox={`0 0 ${imgDim.w} ${imgDim.h}`} preserveAspectRatio="xMidYMid meet" className="absolute inset-0 w-full h-full p-2 pointer-events-none z-20">
+                                {result.detections.map((det, i) => {
+                                  const [x1, y1, x2, y2] = det.bbox;
+                                  const bw = Math.max(x2 - x1, 1);
+                                  const bh = Math.max(y2 - y1, 1);
+                                  const strokeW = Math.max(imgDim.w * 0.004, 2);
+                                  const fontS = Math.max(imgDim.w * 0.025, 12);
+                                  const labelText = `${det.severity.toUpperCase()} (${det.stenosis_percent}%)`;
+                                  const labelW = fontS * labelText.length * 0.65;
+                                  const labelY = y1 - fontS - (strokeW*2) < 0 ? y1 : y1 - fontS - (strokeW*2);
+                                  const textY = y1 - fontS - (strokeW*2) < 0 ? y1 + fontS + strokeW : y1 - strokeW*1.5;
+                                  
+                                  return (
+                                    <g key={i}>
+                                      <rect x={x1} y={y1} width={bw} height={bh} fill="none" stroke="#ef4444" strokeWidth={strokeW} />
+                                      <rect x={x1} y={labelY} width={labelW} height={fontS + (strokeW*2)} fill="#ef4444" />
+                                      <text x={x1 + strokeW} y={textY} fill="white" fontSize={fontS} fontWeight="bold" style={{fontFamily: 'sans-serif'}}>
+                                        {labelText}
+                                      </text>
+                                    </g>
+                                  );
+                                })}
+                              </svg>
+                            )}
                           </div>
                         </>
                       ) : (
@@ -238,11 +267,11 @@ export default function Predict() {
                     </div>
                     {/* Object Detection Labeling */}
                     <div className="h-64 border border-gray-200 bg-gray-100 flex flex-col items-center overflow-hidden">
-                      {result.detection_b64 ? (
+                      {result.heatmap_b64 ? (
                         <>
-                          <div className="w-full bg-gray-200 py-1.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-300 flex-shrink-0">Object Detection</div>
+                          <div className="w-full bg-gray-200 py-1.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-300 flex-shrink-0">Attention Heatmap</div>
                           <div className="flex-1 w-full relative p-2">
-                            <img src={`data:image/png;base64,${result.detection_b64}`} className="absolute inset-0 w-full h-full object-contain p-2" alt="Detection Mapping Result" />
+                            <img src={`data:image/png;base64,${result.heatmap_b64}`} className="absolute inset-0 w-full h-full object-contain p-2" alt="Heatmap Mapping Result" />
                           </div>
                         </>
                       ) : (
