@@ -32,7 +32,7 @@ export default function Predict() {
 
       const API_URL = import.meta.env.DEV 
         ? 'http://localhost:8000/predict' 
-        : 'https://cardiovision-bt72.onrender.com/predict';
+        : 'https://cardiovision-bt72.onrender.com';
 
       const response = await axios.post(API_URL, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
