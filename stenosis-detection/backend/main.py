@@ -11,7 +11,6 @@ from typing import List, Optional
 import numpy as np
 from PIL import Image, ImageFilter
 import io
-import cv2
 import base64
 import os
 import asyncio
@@ -46,14 +45,18 @@ os.makedirs("results", exist_ok=True)
 MODELS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
 
 MODEL_CONFIG = {
+    "YOLOv8n-seg": os.path.join(MODELS_DIR, "YOLOv8n-seg-best.pt"),
     "YOLOv8s-seg": os.path.join(MODELS_DIR, "YOLOv8s-seg-best.pt"),
+    "YOLOv8m-seg": os.path.join(MODELS_DIR, "YOLOv8m-seg-best.pt"),
 }
 
-DEFAULT_MODEL_NAME = "YOLOv8s-seg"
+DEFAULT_MODEL_NAME = "YOLOv8m-seg"
 
 # Model performance stats (used by /api/models/comparison)
 MODEL_STATS = {
+    "YOLOv8n-seg": {"map50": 0.758, "precision": 0.78, "recall": 0.71, "iou": 0.68, "params_millions": 3.2,  "inference_time_ms": 15},
     "YOLOv8s-seg": {"map50": 0.801, "precision": 0.82, "recall": 0.76, "iou": 0.73, "params_millions": 11.8, "inference_time_ms": 28},
+    "YOLOv8m-seg": {"map50": 0.849, "precision": 0.87, "recall": 0.82, "iou": 0.79, "params_millions": 27.3, "inference_time_ms": 52},
 }
 
 _model_cache: dict = {}
@@ -75,8 +78,7 @@ def get_model(model_name: str = DEFAULT_MODEL_NAME):
                 "Place .pt files in backend/models/."
             )
         logger.info(f"Loading {model_name} from {model_path} ...")
-        loaded_model = YOLO(model_path)
-        _model_cache[model_name] = loaded_model
+        _model_cache[model_name] = YOLO(model_path)
         # Restore original (optional, since cached)
         tasks.torch_safe_load = original_torch_safe_load
         logger.info(f"{model_name} loaded OK.")
@@ -124,75 +126,127 @@ def ndarray_to_b64_png(arr: np.ndarray) -> str:
 
 def run_segmentation_inference(image: Image.Image, model_name: str) -> dict:
     """
-    Run YOLOv8-seg once. Generate two mapping outputs: Box isolated (Detection) and Mask isolated (Segmentation).
+    Run YOLOv8-seg inference and return a flat dict with all result fields.
+    All image data is returned as base64 PNG strings.
     """
     img_array = np.array(image.convert("RGB"))
-    
-    # 1. Unified Single Inference Pipeline
     model = get_model(model_name)
+
     results = model(img_array, conf=0.25, iou=0.45, verbose=False)
-    result = results[0]
-    boxes = result.boxes
-
-    # Generate Object Detection overlay natively (Boxes only)
-    try:
-        det_plot_bgr = result.plot(masks=False)
-    except TypeError:
-        det_plot_bgr = result.plot()
-    detection_b64 = ndarray_to_b64_png(det_plot_bgr[..., ::-1])
-
-    # Generate Segmentation overlay natively (Masks only)
-    try:
-        seg_plot_bgr = result.plot(boxes=False)
-    except TypeError:
-        seg_plot_bgr = result.plot()
-    segmentation_b64 = ndarray_to_b64_png(seg_plot_bgr[..., ::-1])
+    result  = results[0]
+    boxes   = result.boxes
 
     if boxes is None or len(boxes) == 0:
         return {
-            "stenosis": False,
-            "confidence": 0.0,
-            "severity": "none",
+            "stenosis":        False,
+            "confidence":      0.0,
+            "severity":        "none",
             "stenosis_percent": 0.0,
-            "bbox": [0.0, 0.0, 0.0, 0.0],
-            "detection_b64": detection_b64,
-            "segmentation_b64": segmentation_b64,
-            "detections": [],
-            "model_used": "YOLOv8s-det + YOLOv8s-seg",
+            "bbox":            [0.0, 0.0, 0.0, 0.0],
+            "mask_b64":        None,
+            "heatmap_b64":     None,
+            "detections":      [],
+            "model_used":      model_name,
             "processing_time": 0.0,
         }
 
+    h, w = img_array.shape[:2]
+    combined_mask = np.zeros((h, w), dtype=np.float32)
     detections = []
+
     for idx, box in enumerate(boxes):
         x1, y1, x2, y2 = [round(float(v), 1) for v in box.xyxy[0].tolist()]
         conf = round(float(box.conf[0].item()), 3)
         bbox = [x1, y1, x2, y2]
+
         stenosis_pct = estimate_diameter_reduction(bbox, img_array.shape)
         severity = classify_severity(stenosis_pct)
 
+        mask_b64 = None
+        try:
+            if result.masks is not None and len(result.masks.data) > idx:
+                raw = result.masks.data[idx].cpu().numpy()  # float32 [H, W]
+                mh, mw = raw.shape
+                mask_uint8 = (raw * 255).astype(np.uint8)
+                if mh != h or mw != w:
+                    mask_pil = Image.fromarray(mask_uint8, mode="L").resize(
+                        (w, h), Image.NEAREST
+                    )
+                    mask_uint8 = np.array(mask_pil)
+                mask_b64 = ndarray_to_b64_png(mask_uint8)
+                combined_mask = np.maximum(combined_mask, mask_uint8.astype(np.float32) / 255.0)
+        except Exception as e:
+            logger.warning(f"Mask extraction failed for detection {idx}: {e}")
+
         detections.append({
-            "bbox": bbox,
-            "confidence": conf,
-            "severity": severity,
+            "bbox":            bbox,
+            "confidence":      conf,
+            "severity":        severity,
             "stenosis_percent": stenosis_pct,
+            "mask_b64":        mask_b64,
         })
+
+    combined_mask = np.clip(combined_mask, 0.0, 1.0)
+    mask_b64 = None
+    heatmap_b64 = None
+
+    if np.any(combined_mask > 0):
+        mask_b64 = ndarray_to_b64_png((combined_mask * 255).astype(np.uint8))
+
+    try:
+        mask_blur = np.array(
+            Image.fromarray((combined_mask * 255).astype(np.uint8), mode="L")
+            .filter(ImageFilter.GaussianBlur(radius=8))
+        ).astype(np.float32) / 255.0
+        mask_blur = np.clip(mask_blur, 0.0, 1.0)
+
+        ys, xs = np.indices((h, w))
+        total = np.sum(mask_blur)
+        if total > 0:
+            cy = np.sum(ys * mask_blur) / total
+            cx = np.sum(xs * mask_blur) / total
+            dist = np.sqrt((xs - cx) ** 2 + (ys - cy) ** 2)
+            dist = dist / (np.max(dist[mask_blur > 0]) + 1e-8)
+            dist_norm = np.clip(1.0 - dist, 0, 1)
+            intensity = np.clip(mask_blur * 0.35 + dist_norm * 0.65, 0.0, 1.0)
+        else:
+            intensity = mask_blur
+
+        alpha = np.clip(mask_blur * 0.9 + 0.2, 0.0, 1.0)
+
+        red = np.clip(np.where(intensity >= 0.5, (intensity - 0.5) * 2.0, 0.0), 0, 1)
+        green = np.clip(np.where(
+            intensity <= 0.5,
+            intensity * 2.0,
+            (1.0 - intensity) * 2.0
+        ), 0, 1)
+        blue = np.clip(np.where(intensity <= 0.5, 1.0 - intensity * 2.0, 0.0), 0, 1)
+        heatmap = np.stack([red, green, blue], axis=-1) * 255
+
+        overlay = np.clip(
+            img_array * (1.0 - alpha[..., None]) + heatmap * alpha[..., None],
+            0, 255,
+        ).astype(np.uint8)
+        heatmap_b64 = ndarray_to_b64_png(overlay)
+    except Exception as e:
+        logger.warning(f"Heatmap generation failed: {e}")
 
     best_idx = int(boxes.conf.argmax().item())
     primary = detections[best_idx]
-    top_severity: str = max(detections, key=lambda d: d["stenosis_percent"])["severity"]
+    top_severity = max(detections, key=lambda d: d["stenosis_percent"])["severity"]
     top_percent = max(d["stenosis_percent"] for d in detections)
 
     return {
-        "stenosis": True,
-        "confidence": primary["confidence"],
-        "severity": top_severity,
+        "stenosis":        True,
+        "confidence":      primary["confidence"],
+        "severity":        top_severity,
         "stenosis_percent": top_percent,
-        "bbox": primary["bbox"],
-        "detection_b64": detection_b64,
-        "segmentation_b64": segmentation_b64,
-        "detections": detections,
-        "model_used": model_name,
-        "processing_time": 0.0,
+        "bbox":            primary["bbox"],
+        "mask_b64":        mask_b64,
+        "heatmap_b64":     heatmap_b64,
+        "detections":      detections,
+        "model_used":      model_name,
+        "processing_time": 0.0,   # filled in by the endpoint
     }
 
 
