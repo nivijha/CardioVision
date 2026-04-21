@@ -30,9 +30,9 @@ export default function Predict() {
       formData.append('file', file);
       formData.append('model', selectedModel);
 
-      const API_URL = import.meta.env.DEV 
-        ? 'http://localhost:8000/predict' 
-        : 'https://cardiovision-bt72.onrender.com/predict';
+      const API_URL = import.meta.env.DEV
+        ? 'http://localhost:8000/predict'
+        : 'https://cardiovision-bt72.onrender.com';
 
       const response = await axios.post(API_URL, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -171,9 +171,9 @@ export default function Predict() {
                     {result?.detections?.length > 0 && (
                       <div className="col-span-2 lg:col-span-3 bg-red-50 border border-red-200 p-3 text-xs text-red-800 font-bold uppercase tracking-widest flex items-center gap-2">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        {result.detections.length > 1 
-                          ? `Critical severity driven by primary lesion out of ${result.detections.length} total mapped vectors. Origin BBox: [${result.bbox?.map(n=>Math.round(n)).join(', ')}]` 
-                          : `Single pathology analyzed at structural BBox: [${result.bbox?.map(n=>Math.round(n)).join(', ')}]`}
+                        {result.detections.length > 1
+                          ? `Critical severity driven by primary lesion out of ${result.detections.length} total mapped vectors. Origin BBox: [${result.bbox?.map(n => Math.round(n)).join(', ')}]`
+                          : `Single pathology analyzed at structural BBox: [${result.bbox?.map(n => Math.round(n)).join(', ')}]`}
                       </div>
                     )}
                     <div className="border border-gray-200 p-5 bg-gray-50 hover:border-red-300 hover:bg-white transition-all cursor-default relative group">
@@ -229,7 +229,7 @@ export default function Predict() {
                         <>
                           <div className="w-full bg-gray-200 py-1.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-300 flex-shrink-0">Vessel Segmentation</div>
                           <div className="flex-1 w-full relative p-2">
-                             <img src={`data:image/png;base64,${result.segmentation_b64}`} className="absolute inset-0 w-full h-full object-contain p-2" alt="Segmentation Result" />
+                            <img src={`data:image/png;base64,${result.segmentation_b64}`} className="absolute inset-0 w-full h-full object-contain p-2" alt="Segmentation Result" />
                           </div>
                         </>
                       ) : (
@@ -245,7 +245,7 @@ export default function Predict() {
                         <>
                           <div className="w-full bg-gray-200 py-1.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-300 flex-shrink-0">Object Detection</div>
                           <div className="flex-1 w-full relative p-2">
-                             <img src={`data:image/png;base64,${result.detection_b64}`} className="absolute inset-0 w-full h-full object-contain p-2" alt="Detection Mapping Result" />
+                            <img src={`data:image/png;base64,${result.detection_b64}`} className="absolute inset-0 w-full h-full object-contain p-2" alt="Detection Mapping Result" />
                           </div>
                         </>
                       ) : (
