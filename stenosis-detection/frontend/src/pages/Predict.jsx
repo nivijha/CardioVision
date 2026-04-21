@@ -30,7 +30,11 @@ export default function Predict() {
       formData.append('file', file);
       formData.append('model', selectedModel);
 
-      const response = await axios.post('http://localhost:8000/predict', formData, {
+      const API_URL = import.meta.env.DEV 
+        ? 'http://localhost:8000/predict' 
+        : 'https://cardiovision-bt72.onrender.com/predict';
+
+      const response = await axios.post(API_URL, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         signal: abortControllerRef.current.signal,
       });
