@@ -1,114 +1,84 @@
-import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Heart, ArrowRight, ChevronRight } from 'lucide-react';
-
-const stats = [
-  { value: '86.7%', label: 'Accuracy', sub: 'YOLOv8m' },
-  { value: '<50ms', label: 'Speed', sub: 'Analysis time' },
-  { value: '2.8k+', label: 'Images', sub: 'Validated' },
-  { value: '0.79', label: 'IoU', sub: 'Segmentation' },
-];
 
 export default function Home() {
   return (
-    <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden gradient-bg">
-        {/* Decorative Background Elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-40 -right-40 w-96 h-96 bg-warm-primary/5 rounded-full blur-3xl" />
-          <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-warm-coral/5 rounded-full blur-3xl" />
+    <div className="bg-white min-h-screen flex flex-col">
+      
+      <section className="w-full min-h-[calc(100vh-64px)] flex flex-col justify-center items-center px-6 py-12 relative overflow-hidden">
+        {/* Subtle grid background for premium tech feel */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none w-full h-full"></div>
+
+        <div className="max-w-4xl mx-auto w-full relative z-10 flex flex-col items-center text-center">
+          <div className="w-12 h-1 bg-red-600 mb-6"></div>
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 mb-4 leading-tight">
+            Coronary Artery Stenosis<br className="hidden md:block"/> Detection and Segmentation
+          </h1>
+          <p className="text-sm font-bold tracking-widest text-gray-400 uppercase mb-6">Core Diagnostic Pipeline</p>
+          
+          <p className="text-lg md:text-xl text-gray-600 mb-10 max-w-2xl leading-relaxed">
+            A precise, deep learning-based diagnostic pipeline utilizing YOLOv8 to automate tracking and stenosis identification in cardiology imaging.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto justify-center">
+            <Link to="/predict" className="bg-red-600 text-white px-8 py-3.5 text-sm font-bold uppercase tracking-wide hover:bg-red-700 transition w-full sm:w-auto text-center">
+              Run Inference System
+            </Link>
+            <Link to="/research" className="border-2 border-gray-900 text-gray-900 bg-white px-8 py-3.5 text-sm font-bold uppercase tracking-wide hover:bg-gray-900 hover:text-white transition w-full sm:w-auto text-center">
+              Read Methodology
+            </Link>
+          </div>
         </div>
+      </section>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-24 relative">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center max-w-4xl mx-auto"
-          >
-            {/* Main Heading */}
-            <h1 className="text-5xl md:text-7xl font-semibold mb-6 tracking-tight text-warm-text leading-tight">
-              AI-Powered Stenosis
-              <span className="gradient-text block">Detection System</span>
-            </h1>
-
-            <p className="text-xl text-warm-secondary max-w-2xl mx-auto mb-10 leading-relaxed">
-              Advanced real-time analysis for coronary artery stenosis using state-of-the-art YOLOv8 models with explainable AI results.
-            </p>
-
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link
-                to="/predict"
-                className="btn-primary flex items-center space-x-2 text-lg px-8 py-4 rounded-xl group"
-              >
-                <span>Start Analysis</span>
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </Link>
-              <Link
-                to="/research"
-                className="card px-8 py-4 rounded-xl text-warm-text font-medium hover:shadow-elevated transition-all flex items-center space-x-2 group"
-              >
-                <span>Learn More</span>
-                <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </div>
-          </motion.div>
-
-          {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-20"
-          >
-            {stats.map((stat, index) => (
-              <div
-                key={index}
-                className="card rounded-2xl p-6 text-center spring-hover"
-              >
-                <div className="text-3xl md:text-4xl font-semibold mb-1 gradient-text">
-                  {stat.value}
-                </div>
-                <div className="text-sm text-warm-secondary font-medium">{stat.label}</div>
-                <div className="text-xs text-warm-tertiary mt-1">{stat.sub}</div>
+      {/* Info Grid */}
+      <section className="py-24 bg-gray-50 border-t border-gray-100">
+        <div className="max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-16 lg:gap-24">
+          
+          <div className="space-y-16 lg:pr-12">
+            <div className="hover:pl-4 transition-all border-l-2 border-transparent hover:border-red-600">
+              <div className="flex items-center gap-3 mb-5">
+                <span className="text-red-600 font-bold bg-white border border-red-100 px-2.5 py-1 text-xs tracking-wider uppercase">Dataset #1</span>
+                <h3 className="text-xl font-bold text-gray-900">ARCADE Validation</h3>
               </div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-24 bg-warm-bgAlt">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            className="card rounded-3xl p-10 md:p-14 text-center relative overflow-hidden"
-          >
-            {/* Background decoration */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-warm-primary/5 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-warm-coral/5 rounded-full blur-3xl pointer-events-none" />
-
-            <div className="relative">
-              <h2 className="text-3xl md:text-4xl font-semibold mb-4 text-warm-text">
-                Ready to Analyze?
-              </h2>
-              <p className="text-warm-secondary mb-8 max-w-xl mx-auto text-lg leading-relaxed">
-                Upload your angiography images and get instant AI-powered analysis with detailed results and visualizations.
+              <p className="text-gray-600 text-base leading-relaxed">
+                Aggregating ~3000 high-resolution (512×512) clinical angiography samples encoded with rigorous COCO format bounding box and mask delineations.
               </p>
-              <Link
-                to="/predict"
-                className="btn-primary inline-flex items-center space-x-2 text-lg px-8 py-4 rounded-xl"
-              >
-                <span>Get Started Now</span>
-              </Link>
             </div>
-          </motion.div>
+
+            <div className="hover:pl-4 transition-all border-l-2 border-transparent hover:border-red-600">
+              <div className="flex items-center gap-3 mb-5">
+                <span className="text-red-600 font-bold bg-white border border-red-100 px-2.5 py-1 text-xs tracking-wider uppercase">Dataset #2</span>
+                <h3 className="text-xl font-bold text-gray-900">CADICA Integration</h3>
+              </div>
+              <p className="text-gray-600 text-base leading-relaxed">
+                Deployed strictly as an evaluation corpus, demonstrating exact real-world zero-shot scalability and clinical variance adaptation.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col justify-center border-l-0 lg:border-l border-gray-200 lg:pl-16 relative">
+            <h2 className="text-sm font-bold text-gray-900 mb-10 tracking-widest uppercase">System Architecture Pipeline</h2>
+            <div className="space-y-8 relative before:absolute before:inset-0 before:ml-[11px] before:-translate-x-px before:h-full before:w-[2px] before:bg-red-100 before:z-0">
+              {[
+                "Input Angiography Frame",
+                "Normalization & Preprocessing",
+                "YOLOv8 Network Inference",
+                "Simultaneous Detection / Segmentation",
+                "Severity Output Localization"
+              ].map((step, idx) => (
+                <div key={idx} className="relative z-10 flex items-center gap-6 group">
+                  <div className="w-6 h-6 rounded-full bg-white border-[5px] border-red-600 flex-shrink-0 transition-transform group-hover:scale-110"></div>
+                  <div className="font-semibold text-gray-800 text-base">
+                    {step}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
         </div>
       </section>
+
     </div>
   );
 }
