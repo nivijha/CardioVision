@@ -1,20 +1,25 @@
+import SectionHeader from '../components/SectionHeader';
+
 export default function Results() {
-  const segmentationArcade = [
-    { model: 'YOLOv8n', precision: '0.421', recall: '0.381', map50: '0.327', map95: '0.120' },
-    { model: 'YOLOv8s', precision: '0.447', recall: '0.413', map50: '0.354', map95: '0.124' },
-    { model: 'YOLOv8m', precision: '-', recall: '-', map50: '-', map95: '-' },
+  // ARCADE dataset: Segmentation metrics (model performance on ARCADE dataset)
+  const arcadeSegmentation = [
+    { model: 'YOLOv8n', precision: '0.421', recall: '0.381', map50: '0.327', map95: '0.120', f1_score: '0.41' },
+    { model: 'YOLOv8s', precision: '0.447', recall: '0.413', map50: '0.354', map95: '0.124', f1_score: '0.43' },
+    { model: 'YOLOv8m', precision: '0.438', recall: '0.403', map50: '0.375', map95: '0.138', f1_score: '0.42'},
   ];
 
-  const detectionArcade = [
-    { model: 'YOLOv8n', precision: '0.327', recall: '0.323', map50: '0.262', map95: '0.095' },
-    { model: 'YOLOv8s', precision: '0.305', recall: '0.335', map50: '0.223', map95: '0.085' },
-    { model: 'YOLOv8m', precision: '-', recall: '-', map50: '-', map95: '-' },
+  // ARCADE dataset: Detection metrics (model performance on ARCADE dataset)
+  const arcadeDetection = [
+    { model: 'YOLOv8n', precision: '0.327', recall: '0.323', map50: '0.262', map95: '0.095', f1_score: '0.32' },
+    { model: 'YOLOv8s', precision: '0.305', recall: '0.335', map50: '0.223', map95: '0.085', f1_score: '0.32' },
+    { model: 'YOLOv8m', precision: '0.193', recall: '0.323', map50: '0.168', map95: '0.061', f1_score: '0.24' },
   ];
 
-  const detectionCadica = [
-    { model: 'YOLOv8n', precision: '0.942', recall: '0.960', map50: '0.940', map95: '0.550' },
-    { model: 'YOLOv8s', precision: '0.9156', recall: '0.903', map50: '0.9443', map95: '0.561' },
-    { model: 'YOLOv8m', precision: '-', recall: '-', map50: '-', map95: '-' },
+  // CADICA dataset: Detection metrics (model performance on CADICA dataset)
+  const cadicaDetection = [
+    { model: 'YOLOv8n', precision: '0.905', recall: '0.850', map50: '0.940', map95: '0.550', f1_score: '0.87' },
+    { model: 'YOLOv8s', precision: '0.915', recall: '0.903', map50: '0.944', map95: '0.561', f1_score: '0.91' },
+    { model: 'YOLOv8m', precision: '0.559', recall: '0.430', map50: '0.475', map95: '0.207', f1_score: '0.49' },
   ];
 
   const Table = ({ data, title }) => (
@@ -32,6 +37,7 @@ export default function Results() {
               <th className="px-6 py-4 text-right font-bold text-gray-900 uppercase tracking-widest text-xs bg-gray-50">Recall</th>
               <th className="px-6 py-4 text-right font-bold text-gray-900 uppercase tracking-widest text-xs bg-gray-50">mAP@0.5</th>
               <th className="px-6 py-4 text-right font-bold text-gray-900 uppercase tracking-widest text-xs bg-gray-50">mAP@0.5:0.95</th>
+              <th className="px-6 py-4 text-right font-bold text-gray-900 uppercase tracking-widest text-xs bg-gray-50">F1-Score</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -42,6 +48,7 @@ export default function Results() {
                 <td className="px-6 py-5 text-right font-medium text-gray-600">{row.recall}</td>
                 <td className="px-6 py-5 text-right font-bold text-red-600">{row.map50}</td>
                 <td className="px-6 py-5 text-right font-medium text-gray-600">{row.map95}</td>
+                <td className="px-6 py-5 text-right font-medium text-gray-600">{row.f1_score}</td>
               </tr>
             ))}
           </tbody>
@@ -53,16 +60,16 @@ export default function Results() {
   return (
     <div className="bg-white min-h-screen py-12 md:py-16">
       <div className="max-w-6xl mx-auto px-6">
-
         <div className="mb-20">
-          <div className="w-12 h-1 bg-red-600 mb-6"></div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900 mb-4 leading-tight">Performance Evaluations</h1>
-          <p className="text-sm font-bold tracking-widest text-gray-400 uppercase">Empirical Model Metrics</p>
+          <SectionHeader 
+            title="Performance Evaluations" 
+            subtitle="Empirical Model Metrics"
+          />
         </div>
 
-        <Table title="Segmentation Analysis: ARCADE Core" data={segmentationArcade} />
-        <Table title="Detection Analysis: ARCADE Core" data={detectionArcade} />
-        <Table title="Detection Analysis: CADICA Core" data={detectionCadica} />
+        <Table title="Segmentation Analysis: ARCADE Core" data={arcadeSegmentation} />
+        <Table title="Detection Analysis: ARCADE Core" data={arcadeDetection} />
+        <Table title="Detection Analysis: CADICA Core" data={cadicaDetection} />
 
         <div className="border-t-2 border-gray-900 pt-16 mt-8">
           <h2 className="text-2xl font-bold mb-8 text-gray-900 tracking-tight">Analytical Observations</h2>

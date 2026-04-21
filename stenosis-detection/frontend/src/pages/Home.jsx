@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import SectionHeader from '../components/SectionHeader';
 
 export default function Home() {
   return (
@@ -9,11 +10,10 @@ export default function Home() {
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none w-full h-full"></div>
 
         <div className="max-w-4xl mx-auto w-full relative z-10 flex flex-col items-center text-center">
-          <div className="w-12 h-1 bg-red-600 mb-6"></div>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 mb-4 leading-tight">
-            Coronary Artery Stenosis<br className="hidden md:block"/> Detection and Segmentation
-          </h1>
-          <p className="text-sm font-bold tracking-widest text-gray-400 uppercase mb-6">Core Diagnostic Pipeline</p>
+          <SectionHeader 
+            title={<>Coronary Artery Stenosis<br className="hidden md:block"/> Detection and Segmentation</>}
+            subtitle="Core Diagnostic Pipeline"
+          />
           
           <p className="text-lg md:text-xl text-gray-600 mb-10 max-w-2xl leading-relaxed">
             A precise, deep learning-based diagnostic pipeline utilizing YOLOv8 to automate tracking and stenosis identification in cardiology imaging.

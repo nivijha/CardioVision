@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { TrendingUp, Target, Activity, Zap, Award, Layers } from 'lucide-react';
 import { getModelComparison } from '../utils/api';
+import { getDefaultModelComparisonData } from '../utils/modelConstants';
 
 const datasetResults = {
   ARCADE: {
@@ -44,18 +45,7 @@ export default function ModelComparison() {
         setData(response);
       } catch (error) {
         console.error('Error fetching model comparison:', error);
-        setData({
-          detection_models: [
-            { name: 'YOLOv8n', map50: 0.782, precision: 0.81, recall: 0.74, params_millions: 3.0, inference_time_ms: 12 },
-            { name: 'YOLOv8s', map50: 0.823, precision: 0.85, recall: 0.79, params_millions: 11.2, inference_time_ms: 23 },
-            { name: 'YOLOv8m', map50: 0.867, precision: 0.89, recall: 0.84, params_millions: 25.9, inference_time_ms: 45 },
-          ],
-          segmentation_models: [
-            { name: 'YOLOv8n-seg', map50: 0.758, precision: 0.78, recall: 0.71, iou: 0.68, params_millions: 3.2, inference_time_ms: 15 },
-            { name: 'YOLOv8s-seg', map50: 0.801, precision: 0.82, recall: 0.76, iou: 0.73, params_millions: 11.8, inference_time_ms: 28 },
-            { name: 'YOLOv8m-seg', map50: 0.849, precision: 0.87, recall: 0.82, iou: 0.79, params_millions: 27.3, inference_time_ms: 52 },
-          ],
-        });
+        setData(getDefaultModelComparisonData());
       } finally {
         setLoading(false);
       }

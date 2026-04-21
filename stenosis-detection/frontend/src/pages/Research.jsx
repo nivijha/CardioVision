@@ -1,3 +1,5 @@
+import SectionHeader from '../components/SectionHeader';
+
 export default function Research() {
   const sections = [
     {
@@ -43,11 +45,11 @@ export default function Research() {
     <div className="bg-white min-h-screen py-12 md:py-16">
       <div className="max-w-6xl mx-auto px-6">
         
-        <div className="mb-20">
-          <div className="w-12 h-1 bg-red-600 mb-6"></div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900 mb-4 leading-tight">Project Mechanics<br/>& Documentation</h1>
-          <p className="text-sm font-bold tracking-widest text-gray-400 uppercase">Methodological Frameworks</p>
-        </div>
+        <SectionHeader 
+          title={<>Project Mechanics<br/>& Documentation</>}
+          subtitle="Methodological Frameworks"
+          className="mb-20"
+        />
 
         <div className="space-y-16">
           {sections.map((section, idx) => (

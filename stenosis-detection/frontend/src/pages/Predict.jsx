@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import axios from 'axios';
+import SectionHeader from '../components/SectionHeader';
 
 export default function Predict() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -41,8 +42,20 @@ export default function Predict() {
       setLoading(false);
     } catch (err) {
       if (axios.isCancel(err)) {
-        // Request aborted cleanly, ignore error formatting
-        console.log("Prediction request was safely aborted via clear.");
+        // Request was cancelled by user - this is not an error, just clear state
+        setLoading(false);
+      } else if (err.response?.status === 400) {
+        setError(`Invalid image format: ${err.response.data.detail || 'Please provide a valid image'}`);
+        setLoading(false);
+      } else if (err.response?.status === 503) {
+        setError('Model unavailable. Please check if the backend is running.');
+        setLoading(false);
+      } else if (err.response?.status === 500) {
+        setError('Server error during inference. Check backend logs for details.');
+        setLoading(false);
+      } else if (err.message === 'Network Error') {
+        setError('Cannot connect to backend. Is the server running at http://localhost:8000?');
+        setLoading(false);
       } else {
         setError(err.message || 'Failed to process image');
         setLoading(false);
@@ -89,10 +102,11 @@ export default function Predict() {
       <div className="max-w-6xl mx-auto px-6">
 
         <div className="mb-20 flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div>
-            <div className="w-12 h-1 bg-red-600 mb-6"></div>
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900 mb-4 leading-tight">Diagnostic Inference Engine</h1>
-            <p className="text-sm font-bold tracking-widest text-gray-400 uppercase">Automated Detection Sequence</p>
+          <div className="flex-1">
+            <SectionHeader 
+              title="Diagnostic Inference Engine" 
+              subtitle="Automated Detection Sequence"
+            />
           </div>
           {selectedFile && (
             <button onClick={resetAll} className="px-6 py-3 bg-white border border-gray-300 text-sm font-bold text-gray-700 hover:text-red-700 hover:border-red-300 transition shadow-sm uppercase tracking-wide">

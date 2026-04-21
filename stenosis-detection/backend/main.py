@@ -68,7 +68,8 @@ def get_model(model_name: str = DEFAULT_MODEL_NAME):
         from ultralytics import YOLO
         from ultralytics.nn import tasks
         import torch
-        # Patch torch_safe_load to use weights_only=False since we trust the model
+        # Ultralytics requires weights_only=False for loading model weights.
+        # We trust the pre-trained model files, so we override the default safe loading.
         original_torch_safe_load = tasks.torch_safe_load
         tasks.torch_safe_load = lambda weight: (torch.load(weight, map_location="cpu", weights_only=False), weight)
         model_path = MODEL_CONFIG[model_name]
@@ -187,11 +188,11 @@ def run_segmentation_inference(image: Image.Image, model_name: str) -> dict:
         })
 
     combined_mask = np.clip(combined_mask, 0.0, 1.0)
-    mask_b64 = None
+    combined_mask_b64 = None
     heatmap_b64 = None
 
     if np.any(combined_mask > 0):
-        mask_b64 = ndarray_to_b64_png((combined_mask * 255).astype(np.uint8))
+        combined_mask_b64 = ndarray_to_b64_png((combined_mask * 255).astype(np.uint8))
 
     try:
         mask_blur = np.array(
@@ -242,7 +243,7 @@ def run_segmentation_inference(image: Image.Image, model_name: str) -> dict:
         "severity":        top_severity,
         "stenosis_percent": top_percent,
         "bbox":            primary["bbox"],
-        "mask_b64":        mask_b64,
+        "mask_b64":        combined_mask_b64,
         "heatmap_b64":     heatmap_b64,
         "detections":      detections,
         "model_used":      model_name,
@@ -302,7 +303,9 @@ async def predict(
     except Exception as e:
         tb = traceback.format_exc()
         logger.error(f"Inference error:\n{tb}")
-        raise HTTPException(status_code=500, detail=f"Inference error: {e}\n\n{tb}")
+        # In production, remove traceback from client response for security
+        detail = f"Inference error: {str(e)}"
+        raise HTTPException(status_code=500, detail=detail)
 
     result["processing_time"] = round(time.time() - t0, 3)
     return result
