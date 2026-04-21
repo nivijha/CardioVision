@@ -28,9 +28,10 @@ export default function Predict() {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('model', selectedModel);
 
+      // model_name must be passed as a query string parameter for FastAPI to parse it
       const response = await axios.post('http://localhost:8000/predict', formData, {
+        params: { model_name: selectedModel },
         headers: { 'Content-Type': 'multipart/form-data' },
         signal: abortControllerRef.current.signal,
       });

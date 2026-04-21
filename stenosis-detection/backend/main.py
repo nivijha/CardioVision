@@ -50,7 +50,7 @@ MODEL_CONFIG = {
     "YOLOv8m-seg": os.path.join(MODELS_DIR, "YOLOv8m-seg-best.pt"),
 }
 
-DEFAULT_MODEL_NAME = "YOLOv8m-seg"
+DEFAULT_MODEL_NAME = "YOLOv8s-seg"
 
 # Model performance stats (used by /api/models/comparison)
 MODEL_STATS = {
