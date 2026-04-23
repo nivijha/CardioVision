@@ -12,3 +12,5 @@ opencv-python-headless>=4.10.0
 scikit-image==0.24.0
 aiofiles==24.1.0
 pydantic==2.8.2
+google-generativeai
+python-dotenv
