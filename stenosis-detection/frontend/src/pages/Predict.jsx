@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
-import axios from 'axios';
+import api from '../utils/api';
 import SectionHeader from '../components/SectionHeader';
 
 export default function Predict() {
@@ -29,7 +29,7 @@ export default function Predict() {
     setChatLoading(true);
 
     try {
-      const res = await axios.post('http://localhost:8000/api/health-chat', {
+      const res = await api.post('/api/health-chat', {
         severity: result ? (result?.severity || primaryDetection?.severity || 'none') : 'none',
         stenosis_percent: result ? (result?.stenosis_percent || primaryDetection?.stenosis_percent || 0) : 0,
         messages: newMessages
@@ -58,7 +58,7 @@ export default function Predict() {
       formData.append('file', file);
 
       // model_name must be passed as a query string parameter for FastAPI to parse it
-      const response = await axios.post('http://localhost:8000/predict', formData, {
+      const response = await api.post('/predict', formData, {
         params: { model_name: selectedModel },
         headers: { 'Content-Type': 'multipart/form-data' },
         signal: abortControllerRef.current.signal,
@@ -80,7 +80,8 @@ export default function Predict() {
         setError('Server error during inference. Check backend logs for details.');
         setLoading(false);
       } else if (err.message === 'Network Error') {
-        setError('Cannot connect to backend. Is the server running at http://localhost:8000?');
+        const backendUrl = import.meta.env.VITE_API_BASE_URL || 'https://cardiovision-bt72.onrender.com';
+        setError(`Cannot connect to backend. Is the server running at ${backendUrl}?`);
         setLoading(false);
       } else {
         setError(err.message || 'Failed to process image');

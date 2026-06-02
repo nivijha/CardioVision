@@ -35,10 +35,16 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 
-# CORS configuration — allow all origins during development
+# CORS configuration — allow origins from environment variable in production
+cors_allowed = os.getenv("CORS_ALLOWED_ORIGINS", "")
+if cors_allowed:
+    origins = [o.strip() for o in cors_allowed.split(",") if o.strip()]
+else:
+    origins = ["*"]  # default to permissive for local dev; override in production
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
