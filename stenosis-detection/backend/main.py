@@ -17,6 +17,8 @@ import asyncio
 import time
 import traceback
 import logging
+import gc
+import psutil
 import google.generativeai as genai
 from dotenv import load_dotenv
 
@@ -35,12 +37,18 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 
+DEFAULT_CORS_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://cardio-vision-murex.vercel.app",
+]
+
 # CORS configuration — allow origins from environment variable in production
 cors_allowed = os.getenv("CORS_ALLOWED_ORIGINS", "")
+origins = DEFAULT_CORS_ORIGINS.copy()
 if cors_allowed:
-    origins = [o.strip() for o in cors_allowed.split(",") if o.strip()]
-else:
-    origins = ["*"]  # default to permissive for local dev; override in production
+    origins.extend([o.strip() for o in cors_allowed.split(",") if o.strip()])
+origins = list(dict.fromkeys(origins))
 
 app.add_middleware(
     CORSMiddleware,
@@ -65,6 +73,8 @@ MODEL_CONFIG = {
 }
 
 DEFAULT_MODEL_NAME = "YOLOv8s-seg"
+MAX_IMAGE_SIDE = int(os.getenv("MAX_IMAGE_SIDE", "1024"))
+TORCH_NUM_THREADS = int(os.getenv("TORCH_NUM_THREADS", "2"))
 
 # Model performance stats (used by /api/models/comparison)
 MODEL_STATS = {
@@ -74,6 +84,45 @@ MODEL_STATS = {
 }
 
 _model_cache: dict = {}
+
+
+def log_memory(stage: str):
+    try:
+        process = psutil.Process(os.getpid())
+        rss_mb = process.memory_info().rss / (1024 * 1024)
+        logger.info(f"[memory] {stage}: {rss_mb:.1f} MB RSS")
+    except Exception as exc:
+        logger.warning(f"Unable to log memory usage for {stage}: {exc}")
+
+
+def preprocess_image_for_inference(image: Image.Image) -> Image.Image:
+    if max(image.width, image.height) > MAX_IMAGE_SIDE:
+        ratio = MAX_IMAGE_SIDE / max(image.width, image.height)
+        new_size = (max(1, int(image.width * ratio)), max(1, int(image.height * ratio)))
+        logger.info(f"Resizing input image from {image.width}x{image.height} to {new_size[0]}x{new_size[1]} for inference")
+        return image.resize(new_size, Image.LANCZOS)
+    return image
+
+
+@app.on_event("startup")
+async def startup_event():
+    logger.info("FastAPI startup: configuring environment and preloading model")
+    os.environ.setdefault("OMP_NUM_THREADS", str(TORCH_NUM_THREADS))
+    os.environ.setdefault("MKL_NUM_THREADS", str(TORCH_NUM_THREADS))
+    try:
+        import torch
+        torch.set_num_threads(TORCH_NUM_THREADS)
+        torch.set_num_interop_threads(TORCH_NUM_THREADS)
+        logger.info(f"Configured torch to use {TORCH_NUM_THREADS} thread(s)")
+    except Exception as exc:
+        logger.warning(f"Unable to configure torch threads: {exc}")
+
+    log_memory("startup before model load")
+    try:
+        get_model(DEFAULT_MODEL_NAME)
+        log_memory("startup after model load")
+    except Exception as exc:
+        logger.error(f"Model preload failed: {exc}")
 
 
 def get_model(model_name: str = DEFAULT_MODEL_NAME):
@@ -144,10 +193,15 @@ def run_segmentation_inference(image: Image.Image, model_name: str) -> dict:
     Run YOLOv8-seg inference and return a flat dict with all result fields.
     All image data is returned as base64 PNG strings.
     """
+    image = preprocess_image_for_inference(image)
     img_array = np.array(image.convert("RGB"))
     model = get_model(model_name)
 
-    results = model(img_array, conf=0.25, iou=0.45, verbose=False)
+    log_memory("before forward pass")
+    import torch
+    with torch.inference_mode():
+        results = model(img_array, conf=0.25, iou=0.45, device="cpu", verbose=False)
+    log_memory("after forward pass")
     result  = results[0]
     boxes   = result.boxes
 
@@ -293,7 +347,7 @@ async def predict(
     Upload an angiography image → get detection + segmentation results.
 
     Optional query param:
-      model_name: YOLOv8n-seg | YOLOv8s-seg | YOLOv8m-seg  (default: YOLOv8m-seg)
+      model_name: YOLOv8n-seg | YOLOv8s-seg | YOLOv8m-seg  (default: YOLOv8s-seg)
     """
     if model_name not in MODEL_CONFIG:
         raise HTTPException(
@@ -322,6 +376,7 @@ async def predict(
         raise HTTPException(status_code=500, detail=detail)
 
     result["processing_time"] = round(time.time() - t0, 3)
+    log_memory("after inference request")
     return result
 
 

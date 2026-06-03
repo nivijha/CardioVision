@@ -9,11 +9,19 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
+      '/predict': {
+        target: backendTarget,
+        changeOrigin: true,
+      },
+      '/health': {
+        target: backendTarget,
+        changeOrigin: true,
+      },
       '/api': {
         target: backendTarget,
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '')
-      }
-    }
-  }
+        rewrite: (path) => path.replace(/^\/api/, '/api'),
+      },
+    },
+  },
 });

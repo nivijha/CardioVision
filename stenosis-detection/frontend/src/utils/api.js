@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Use Vite environment variable VITE_API_BASE_URL in production builds.
 // Fallback to the deployed backend URL if not provided (keeps local dev working).
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.DEV ? '' : 'http://localhost:8000');
 
 const api = axios.create({
   baseURL: API_BASE_URL,
