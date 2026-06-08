@@ -58,7 +58,7 @@ export default function Predict() {
       formData.append('file', file);
 
       // model_name must be passed as a query string parameter for FastAPI to parse it
-      const response = await api.post('/predict', formData, {
+      const response = await api.post('/api/predict', formData, {
         params: { model_name: selectedModel },
         headers: { 'Content-Type': 'multipart/form-data' },
         signal: abortControllerRef.current.signal,

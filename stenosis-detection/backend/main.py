@@ -332,13 +332,13 @@ async def root():
     }
 
 
-@app.get("/health")
+@app.get("/api/health")
 async def health_check():
     statuses = {name: os.path.exists(path) for name, path in MODEL_CONFIG.items()}
     return {"status": "healthy", "models_available": statuses}
 
 
-@app.post("/predict")
+@app.post("/api/predict")
 async def predict(
     file: UploadFile = File(...),
     model_name: str = DEFAULT_MODEL_NAME,

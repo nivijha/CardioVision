@@ -15,7 +15,7 @@ export const predictStenosis = async (file) => {
   const formData = new FormData();
   formData.append('file', file);
 
-  const response = await api.post('/predict', formData, {
+  const response = await api.post('/api/predict', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -30,7 +30,7 @@ export const getModelComparison = async () => {
 };
 
 export const healthCheck = async () => {
-  const response = await api.get('/health');
+  const response = await api.get('/api/health');
   return response.data;
 };
 
