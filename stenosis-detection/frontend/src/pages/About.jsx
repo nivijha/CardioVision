@@ -19,7 +19,7 @@ export default function About() {
             <div className="bg-white p-6 md:p-8 hover:bg-gray-50 transition-colors">
               <span className="text-xs font-bold text-red-600 tracking-widest uppercase mb-2 block">Phase 01</span>
               <h3 className="text-xl font-bold text-gray-900 mb-3">January</h3>
-              <p className="text-sm text-gray-600 font-medium">Literature review frameworks spanning 2021–2025.</p>
+              <p className="text-sm text-gray-600 font-medium">Literature review frameworks spanning 2022–2026.</p>
             </div>
             <div className="bg-white p-6 md:p-8 hover:bg-gray-50 transition-colors">
               <span className="text-xs font-bold text-red-600 tracking-widest uppercase mb-2 block">Phase 02</span>
