@@ -1,0 +1,17 @@
+# ARCADE dataset config for YOLOv8-seg fine-tuning.
+# Convert the MICCAI 2023 ARCADE challenge annotations to YOLO COCO format,
+# then point these paths at your local copy. Do not commit raw imaging data.
+#
+# Layout expected here:
+#   data/arcade/images/train/  (and val/)
+#   data/arcade/labels/train/  (and val/)  -> YOLO .txt segmentation labels
+
+path: ../data/arcade
+train: images/train
+val: images/val
+
+# Single lesion class (stenosis). The public ARCADE challenge has 4 classes
+# (healthy/stenosis/multiple); the segmentation head used here isolates the
+# stenosis class. Adjust names if you keep all four.
+names:
+  0: stenosis

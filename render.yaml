@@ -1,0 +1,25 @@
+# Render Blueprint - declarative deploy for the CardioVision backend.
+# Import in the Render dashboard: New -> Blueprint -> point at this repo.
+# The frontend (Vercel) and backend (Render) are intentionally separate.
+services:
+  - type: web
+    name: cardiovision-backend
+    runtime: python
+    rootDir: stenosis-detection/backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    plan: free
+    envVars:
+      # Keep the model running on the CPU-only image; restrict to a small
+      # number of threads so free-tier memory stays under ~512MB.
+      - key: TORCH_NUM_THREADS
+        value: "2"
+      - key: MAX_IMAGE_SIDE
+        value: "1024"
+      # Explicit allow-list so CORS never silently blocks the SPA.
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://cardio-vision-murex.vercel.app
+      # Set a real value in the Render dashboard (sync: false = never exposed here).
+      - key: GEMINI_API_KEY
+        sync: false

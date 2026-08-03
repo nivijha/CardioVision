@@ -14,6 +14,8 @@ export default function Predict() {
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isColdStarting, setIsColdStarting] = useState(false);
+  const coldStartTimerRef = useRef(null);
 
   const selectedModel = 'YOLOv8s-seg';
   const prevModelRef = useRef(selectedModel);
@@ -46,6 +48,9 @@ export default function Predict() {
   const handlePredict = useCallback(async (file) => {
     setLoading(true);
     setError(null);
+    setIsColdStarting(false);
+    if (coldStartTimerRef.current) clearTimeout(coldStartTimerRef.current);
+    coldStartTimerRef.current = setTimeout(() => setIsColdStarting(true), 15000);
 
     // Abort any ongoing request before starting a new one
     if (abortControllerRef.current) {
@@ -70,18 +75,21 @@ export default function Predict() {
       if (axios.isCancel(err)) {
         // Request was cancelled by user - this is not an error, just clear state
         setLoading(false);
+      } else if (err.code === 'ECONNABORTED') {
+        setError('Backend took too long to respond. On the free tier the server may still be cold-starting - please try again in a minute.');
+        setLoading(false);
       } else if (err.response?.status === 400) {
         setError(`Invalid image format: ${err.response.data.detail || 'Please provide a valid image'}`);
         setLoading(false);
       } else if (err.response?.status === 503) {
-        setError('Model unavailable. Please check if the backend is running.');
+        setError('Backend is warming up or unavailable (Render free tier spins down after inactivity). Please wait ~30s and try again.');
         setLoading(false);
       } else if (err.response?.status === 500) {
         setError('Server error during inference. Check backend logs for details.');
         setLoading(false);
       } else if (err.message === 'Network Error') {
         const backendUrl = import.meta.env.VITE_API_BASE_URL || 'https://cardiovision-bt72.onrender.com';
-        setError(`Cannot connect to backend. Is the server running at ${backendUrl}?`);
+        setError(`Cannot connect to backend at ${backendUrl}. Make sure the server is running (a cold start on Render can take ~30-60s).`);
         setLoading(false);
       } else {
         setError(err.message || 'Failed to process image');
@@ -114,11 +122,16 @@ export default function Predict() {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
+    if (coldStartTimerRef.current) {
+      clearTimeout(coldStartTimerRef.current);
+      coldStartTimerRef.current = null;
+    }
     setLoading(false);
     setSelectedFile(null);
     setPreviewUrl(null);
     setResult(null);
     setError(null);
+    setIsColdStarting(false);
     setImgDim({ w: 0, h: 0 });
     setChatMessages([]);
     setChatInput('');
@@ -176,6 +189,11 @@ export default function Predict() {
                     <div className="absolute inset-0 bg-white/95 flex flex-col items-center justify-center">
                       <div className="w-10 h-10 border-[4px] border-gray-200 border-t-red-600 rounded-full animate-spin mb-4"></div>
                       <span className="text-sm font-bold text-gray-900 tracking-wide uppercase">Executing Forward Pass</span>
+                      {isColdStarting && (
+                        <span className="text-xs text-gray-500 font-semibold mt-3 text-center max-w-xs">
+                          Backend is cold-starting on the free tier - first request after idle can take ~30-60s. Please wait.
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>

@@ -56,3 +56,10 @@ backend/results/*
 .coverage
 htmlcov/
 .pytest_cache/
+
+# Training artifacts (weights, plots, csv, logs) - commit metrics.json only
+training/runs/
+training/data/
+*.pt.bak
+
+toRead/*
