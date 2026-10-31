@@ -13,7 +13,7 @@ const API_BASE_URL =
 
 // Render's free tier cold-starts a PyTorch instance in ~30-60s, so the
 // timeout must exceed a cold boot or first requests will abort early.
-export const REQUEST_TIMEOUT_MS = 90000;
+export const REQUEST_TIMEOUT_MS = 180000;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
