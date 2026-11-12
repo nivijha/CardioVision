@@ -24,6 +24,18 @@ MAX_CONCURRENT_INFERENCE = int(os.getenv("MAX_CONCURRENT_INFERENCE", "1"))
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
+# Inference provider: "local" (legacy, YOLO loaded on Render) or "modal"
+# (YOLO inference proxied to a Modal-deployed service).
+INFERENCE_PROVIDER = os.getenv("INFERENCE_PROVIDER", "local")
+# Base URL of the Modal inference service (no trailing slash).
+MODAL_INFERENCE_URL = os.getenv("MODAL_INFERENCE_URL", "")
+# Shared secret used to authenticate Render -> Modal requests.
+MODAL_INFERENCE_TOKEN = os.getenv("MODAL_INFERENCE_TOKEN", "")
+
+# Modal client timeouts (seconds).
+MODAL_CONNECT_TIMEOUT = float(os.getenv("MODAL_CONNECT_TIMEOUT", "10.0"))
+MODAL_READ_TIMEOUT = float(os.getenv("MODAL_READ_TIMEOUT", "300.0"))
+
 # Models served by the app. Only the weights that are committed will be marked
 # available by /api/health.
 MODEL_CONFIG = {

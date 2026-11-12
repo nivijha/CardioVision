@@ -1,0 +1,25 @@
+# Modal inference service dependencies (documentation / local dev reference).
+# The Modal container image is defined inline in modal_inference.py; this file
+# mirrors the same stack for local testing and pip installs the Modal CLI.
+
+# Modal SDK / CLI
+modal==1.3.5
+
+# ML stack mirrored in the Modal image (CPU-only torch wheels at build time).
+fastapi==0.115.0
+python-multipart==0.0.9
+pillow==10.4.0
+numpy==1.26.4
+psutil>=5.9.0
+python-dotenv
+ultralytics==8.2.50
+opencv-python-headless>=4.10.0
+
+# CPU-only PyTorch (install via --extra-index-url https://download.pytorch.org/whl/cpu)
+torch>=2.0.0
+torchvision>=0.15.0
+
+# Local dev tooling
+httpx==0.28.1
+pytest==8.2.2
+ruff

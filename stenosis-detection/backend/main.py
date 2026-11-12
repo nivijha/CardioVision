@@ -12,7 +12,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config import DEFAULT_MODEL_NAME, TORCH_NUM_THREADS, build_cors_origins
+from app.config import DEFAULT_MODEL_NAME, INFERENCE_PROVIDER, build_cors_origins
 from app.routers import chat, health, models, predict
 
 logging.basicConfig(level=logging.INFO)
@@ -24,26 +24,12 @@ os.makedirs("results", exist_ok=True)
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    """Configure torch threads and preload the default model on boot."""
-    os.environ.setdefault("OMP_NUM_THREADS", str(TORCH_NUM_THREADS))
-    os.environ.setdefault("MKL_NUM_THREADS", str(TORCH_NUM_THREADS))
-    try:
-        import torch
+    """Application lifespan.
 
-        torch.set_num_threads(TORCH_NUM_THREADS)
-        torch.set_num_interop_threads(TORCH_NUM_THREADS)
-        logger.info(f"Configured torch to use {TORCH_NUM_THREADS} thread(s)")
-    except Exception as exc:
-        logger.warning(f"Unable to configure torch threads: {exc}")
-
-    from app.services.yolo import get_model, log_memory
-
-    log_memory("startup before model load")
-    try:
-        get_model(DEFAULT_MODEL_NAME)
-        log_memory("startup after model load")
-    except Exception as exc:
-        logger.error(f"Model preload failed: {exc}")
+    With INFERENCE_PROVIDER=modal the YOLO model is loaded on Modal, not
+    here, so Render no longer initialises PyTorch or loads weights at boot.
+    """
+    logger.info("Application startup complete (inference_provider=%s)", INFERENCE_PROVIDER)
     yield
 
 
@@ -74,6 +60,7 @@ async def root():
         "message": "Stenosis Detection AI API",
         "version": "1.0.0",
         "active_model": DEFAULT_MODEL_NAME,
+        "inference_provider": INFERENCE_PROVIDER,
     }
 
 

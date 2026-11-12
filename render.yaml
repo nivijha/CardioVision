@@ -11,6 +11,17 @@ services:
     healthCheckPath: /api/health
     plan: free
     envVars:
+      # Inference provider: "modal" proxies YOLO inference to the deployed
+      # Modal service; Render no longer loads PyTorch or YOLO weights.
+      - key: INFERENCE_PROVIDER
+        value: "modal"
+      # Base URL of the deployed Modal inference service (no trailing slash).
+      # Set to the URL printed by `modal deploy modal_inference.py`.
+      - key: MODAL_INFERENCE_URL
+        value: "https://nivijha--cardio-vision-inference-fastapi-app.us-east.modal.run"
+      # Shared secret for Render -> Modal auth (never exposed in this file).
+      - key: MODAL_INFERENCE_TOKEN
+        sync: false
       # Keep the model running on the CPU-only image; restrict to a small
       # number of threads so free-tier memory stays under ~512MB.
       - key: TORCH_NUM_THREADS

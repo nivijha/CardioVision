@@ -1,16 +1,16 @@
 fastapi==0.115.0
 uvicorn[standard]==0.30.1
 python-multipart==0.0.9
+httpx==0.28.1
 pillow==10.4.0
 numpy==1.26.4
-# Use CPU-only wheels on Render to save memory & build time
---extra-index-url https://download.pytorch.org/whl/cpu
-torch>=2.0.0
-torchvision>=0.15.0
-ultralytics==8.2.50
-opencv-python-headless>=4.10.0
 psutil>=5.9.0
 aiofiles==24.1.0
 pydantic==2.8.2
 google-generativeai
 python-dotenv
+
+# ML-only dependencies (torch, torchvision, ultralytics, opencv-python-headless)
+# have been moved to the Modal inference service. Render no longer loads
+# PyTorch or YOLO weights locally when INFERENCE_PROVIDER=modal.
+# To roll back to local inference, re-add these and set INFERENCE_PROVIDER=local.
