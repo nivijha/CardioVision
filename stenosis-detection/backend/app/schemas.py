@@ -2,11 +2,13 @@
 
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class DetectionItem(BaseModel):
     """A single detected lesion."""
+
+    model_config = ConfigDict(protected_namespaces=())
 
     bbox: List[float] = Field(..., description="Bounding box [x1, y1, x2, y2]")
     confidence: float = Field(..., ge=0, le=1, description="Detection confidence score")
@@ -17,6 +19,8 @@ class DetectionItem(BaseModel):
 
 class StenosisResult(BaseModel):
     """Detection or segmentation inference result."""
+
+    model_config = ConfigDict(protected_namespaces=())
 
     stenosis: bool
     confidence: float = Field(..., ge=0, le=1)

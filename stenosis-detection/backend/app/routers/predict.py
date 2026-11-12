@@ -9,7 +9,7 @@ import traceback
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from PIL import Image
 
-from app.config import DEFAULT_MODEL_NAME, MODEL_CONFIG
+from app.config import DEFAULT_MODEL_NAME, MAX_UPLOAD_BYTES, MODEL_CONFIG
 from app.services.yolo import log_memory, run_segmentation_inference
 
 logger = logging.getLogger(__name__)
@@ -33,8 +33,17 @@ async def predict(
         )
 
     try:
-        contents = await file.read()
+        # Bounded read: cap at MAX_UPLOAD_BYTES + 1 so we never buffer an
+        # unbounded upload before checking its size.
+        contents = await file.read(MAX_UPLOAD_BYTES + 1)
+        if len(contents) > MAX_UPLOAD_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail=f"Image too large. Maximum size is {MAX_UPLOAD_BYTES // (1024 * 1024)} MB.",
+            )
         image = Image.open(io.BytesIO(contents)).convert("RGB")
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid image: {e}")
 

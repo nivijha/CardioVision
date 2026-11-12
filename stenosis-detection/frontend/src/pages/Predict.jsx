@@ -108,6 +108,18 @@ export default function Predict() {
           setError(
             `Invalid image: ${err.response.data.detail || "Please upload a valid image."}`,
           );
+        } else if (err.response?.status === 413) {
+          setError(
+            "Image too large. Please upload a smaller image (max 8 MB).",
+          );
+        } else if (err.response?.status === 429) {
+          setError(
+            "The backend is busy processing another request. Please retry shortly.",
+          );
+        } else if (err.response?.status === 502) {
+          setError(
+            "The backend gateway is unavailable. It may be cold-starting or restarting. Please retry.",
+          );
         } else if (err.response?.status === 503) {
           setError(
             "Prediction service is temporarily unavailable. Please retry.",

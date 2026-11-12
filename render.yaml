@@ -16,7 +16,13 @@ services:
       - key: TORCH_NUM_THREADS
         value: "2"
       - key: MAX_IMAGE_SIDE
-        value: "1024"
+        value: "640"
+      - key: YOLO_IMGSZ
+        value: "640"
+      - key: MAX_UPLOAD_BYTES
+        value: "8388608"
+      - key: MAX_CONCURRENT_INFERENCE
+        value: "1"
       # Explicit allow-list so CORS never silently blocks the SPA.
       - key: CORS_ALLOWED_ORIGINS
         value: https://cardio-vision-murex.vercel.app

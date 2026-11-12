@@ -7,8 +7,12 @@ and green in a bare dev environment.
 
 import io
 import os
+import threading
+import time
 
+import numpy as np
 import pytest
+from PIL import Image
 
 try:
     from fastapi.testclient import TestClient
@@ -90,3 +94,101 @@ def test_predict_default_model_runs(client):
         files={"file": ("img.png", _png_bytes(), "image/png")},
     )
     assert resp.status_code in (200, 503)
+
+
+class FakeScalar:
+    def __init__(self, value):
+        self._v = float(value)
+
+    def item(self):
+        return self._v
+
+
+class FakeList:
+    def __init__(self, values):
+        self._v = [float(v) for v in values]
+
+    def tolist(self):
+        return self._v
+
+
+class FakeBox:
+    def __init__(self, xyxy, conf):
+        self.xyxy = [FakeList(xyxy)]
+        self.conf = [FakeScalar(conf)]
+
+
+class FakeBoxes:
+    def __init__(self, boxes):
+        self._boxes = boxes
+        self.conf = np.array([b.conf[0]._v for b in boxes], dtype=np.float32)
+
+    def __len__(self):
+        return len(self._boxes)
+
+    def __bool__(self):
+        return len(self._boxes) > 0
+
+    def __iter__(self):
+        return iter(self._boxes)
+
+
+class FakeResult:
+    def __init__(self, boxes, masks=None):
+        self.boxes = boxes
+        self.masks = masks
+
+
+class FakeModel:
+    def __call__(self, img_array, conf, iou, device, verbose, imgsz):
+        return [FakeResult(FakeBoxes([FakeBox([10.0, 10.0, 50.0, 50.0], 0.9)]), None)]
+
+
+@pytest.mark.skipif(not HAS_FASTAPI, reason="FastAPI stack not installed")
+def test_concurrent_predictions_are_serialized(monkeypatch):
+    """Concurrent inference calls must serialize under the semaphore and never
+    overwrite each other's results."""
+    import app.services.yolo as yolo_module
+
+    max_concurrent = 0
+    current = 0
+    lock = threading.Lock()
+
+    class CountingModel(FakeModel):
+        def __call__(self, img_array, conf, iou, device, verbose, imgsz):
+            nonlocal max_concurrent, current
+            with lock:
+                current += 1
+                max_concurrent = max(max_concurrent, current)
+            time.sleep(0.05)
+            with lock:
+                current -= 1
+            return super().__call__(img_array, conf, iou, device, verbose, imgsz)
+
+    monkeypatch.setattr(
+        yolo_module, "get_model", lambda model_name: CountingModel()
+    )
+
+    image = Image.new("RGB", (128, 128), (128, 128, 128))
+    results = []
+    errors = []
+
+    def worker(_idx):
+        try:
+            results.append(yolo_module.run_segmentation_inference(image, "YOLOv8s-seg"))
+        except Exception as exc:  # noqa: BLE001
+            errors.append(exc)
+
+    threads = [threading.Thread(target=worker, args=(i,)) for i in range(5)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert not errors, errors
+    assert len(results) == 5
+    assert max_concurrent == 1, f"expected serialized inference, got max_concurrent={max_concurrent}"
+    for result in results:
+        assert result["stenosis"] is True
+        assert result["model_used"] == "YOLOv8s-seg"
+        assert len(result["detections"]) == 1

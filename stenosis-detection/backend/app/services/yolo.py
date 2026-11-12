@@ -2,23 +2,36 @@
 
 Owns the model cache and the end-to-end inference pipeline: preprocessing,
 forward pass, mask/heatmap generation, and stenosis estimation.
+
+The whole memory-intensive prediction lifecycle is guarded by a process-wide
+inference semaphore so that concurrent requests cannot stack large intermediate
+arrays on a memory-constrained Render instance. The semaphore is always
+released, even when inference raises an exception.
 """
 
 import base64
+import gc
 import io
 import logging
 import os
+import threading
 
 import numpy as np
 from PIL import Image, ImageFilter
 
-from app.config import MAX_IMAGE_SIDE, MODEL_CONFIG
+from app.config import MAX_IMAGE_SIDE, MODEL_CONFIG, YOLO_IMGSZ
 from app.services.stenosis import classify_severity, estimate_diameter_reduction
 
 logger = logging.getLogger(__name__)
 
 # Models are loaded lazily and cached for the lifetime of the process (Singleton).
 _model_cache: dict = {}
+
+# Serializes the full memory-intensive prediction lifecycle so concurrent
+# requests do not multiply peak RSS on a memory-constrained instance.
+_inference_semaphore = threading.Semaphore(
+    int(os.getenv("MAX_CONCURRENT_INFERENCE", "1"))
+)
 
 
 def log_memory(stage: str) -> None:
@@ -89,23 +102,41 @@ def get_model(model_name: str):
 
 
 def _generate_heatmap_overlay(img_array: np.ndarray, combined_mask: np.ndarray) -> str:
-    """Build a green->yellow->red attention overlay base64 PNG from the mask."""
+    """Build a green->yellow->red attention overlay base64 PNG from the mask.
+
+    Optimized to avoid large int64 index arrays from ``np.indices`` and to
+    reuse the mask blur buffer instead of allocating several full-image
+    temporaries. Only arrays required for the final overlay are retained.
+    """
     h, w = combined_mask.shape
+
+    # Blur the mask once; reuse as both the attention intensity base and alpha.
     mask_blur = np.array(
         Image.fromarray((combined_mask * 255).astype(np.uint8), mode="L")
         .filter(ImageFilter.GaussianBlur(radius=8))
     ).astype(np.float32) / 255.0
     mask_blur = np.clip(mask_blur, 0.0, 1.0)
 
-    ys, xs = np.indices((h, w))
-    total = np.sum(mask_blur)
+    total = float(np.sum(mask_blur))
     if total > 0:
-        cy = np.sum(ys * mask_blur) / total
-        cx = np.sum(xs * mask_blur) / total
-        dist = np.sqrt((xs - cx) ** 2 + (ys - cy) ** 2)
-        dist = dist / (np.max(dist[mask_blur > 0]) + 1e-8)
-        dist_norm = np.clip(1.0 - dist, 0, 1)
+        # Weighted centroid computed via reductions instead of full index grids.
+        ys = np.arange(h, dtype=np.float32)
+        xs = np.arange(w, dtype=np.float32)
+        col_sum = np.sum(mask_blur, axis=0)  # sum over rows per column
+        row_sum = np.sum(mask_blur, axis=1)  # sum over cols per row
+        cx = float(np.dot(xs, col_sum)) / total
+        cy = float(np.dot(ys, row_sum)) / total
+
+        # Distance-from-centroid field as float32 (not int64 from np.indices).
+        yy, xx = np.meshgrid(ys, xs, indexing="ij")
+        dist = np.sqrt((xx - cx) ** 2 + (yy - cy) ** 2, dtype=np.float32)
+        max_dist = float(np.max(dist[mask_blur > 0]) + 1e-8)
+        dist_norm = np.clip(1.0 - dist / max_dist, 0.0, 1.0)
         intensity = np.clip(mask_blur * 0.35 + dist_norm * 0.65, 0.0, 1.0)
+
+        # Free the temporary meshgrid arrays now that intensity is computed.
+        del yy, xx, dist, dist_norm, col_sum, row_sum, xs, ys
+        gc.collect()
     else:
         intensity = mask_blur
 
@@ -124,94 +155,126 @@ def _generate_heatmap_overlay(img_array: np.ndarray, combined_mask: np.ndarray) 
 
 
 def run_segmentation_inference(image: Image.Image, model_name: str) -> dict:
-    """Run YOLOv8-seg inference and return a flat dict with all result fields."""
-    image = preprocess_image_for_inference(image)
-    img_array = np.array(image.convert("RGB"))
-    model = get_model(model_name)
+    """Run YOLOv8-seg inference and return a flat dict with all result fields.
 
-    log_memory("before forward pass")
-    import torch
-
-    with torch.inference_mode():
-        results = model(img_array, conf=0.25, iou=0.45, device="cpu", verbose=False)
-    log_memory("after forward pass")
-    result = results[0]
-    boxes = result.boxes
-
-    if boxes is None or len(boxes) == 0:
-        return {
-            "stenosis": False,
-            "confidence": 0.0,
-            "severity": "none",
-            "stenosis_percent": 0.0,
-            "bbox": [0.0, 0.0, 0.0, 0.0],
-            "mask_b64": None,
-            "heatmap_b64": None,
-            "detections": [],
-            "model_used": model_name,
-            "processing_time": 0.0,
-        }
-
-    h, w = img_array.shape[:2]
-    combined_mask = np.zeros((h, w), dtype=np.float32)
-    detections = []
-
-    for idx, box in enumerate(boxes):
-        x1, y1, x2, y2 = [round(float(v), 1) for v in box.xyxy[0].tolist()]
-        conf = round(float(box.conf[0].item()), 3)
-        bbox = [x1, y1, x2, y2]
-
-        stenosis_pct = estimate_diameter_reduction(bbox, img_array.shape)
-        severity = classify_severity(stenosis_pct)
-
-        mask_b64 = None
-        try:
-            if result.masks is not None and len(result.masks.data) > idx:
-                raw = result.masks.data[idx].cpu().numpy()  # float32 [H, W]
-                mh, mw = raw.shape
-                mask_uint8 = (raw * 255).astype(np.uint8)
-                if mh != h or mw != w:
-                    mask_pil = Image.fromarray(mask_uint8, mode="L").resize((w, h), Image.NEAREST)
-                    mask_uint8 = np.array(mask_pil)
-                mask_b64 = ndarray_to_b64_png(mask_uint8)
-                combined_mask = np.maximum(combined_mask, mask_uint8.astype(np.float32) / 255.0)
-        except Exception as e:
-            logger.warning(f"Mask extraction failed for detection {idx}: {e}")
-
-        detections.append({
-            "bbox": bbox,
-            "confidence": conf,
-            "severity": severity,
-            "stenosis_percent": stenosis_pct,
-            "mask_b64": mask_b64,
-        })
-
-    combined_mask = np.clip(combined_mask, 0.0, 1.0)
-    combined_mask_b64 = None
-    heatmap_b64 = None
-
-    if np.any(combined_mask > 0):
-        combined_mask_b64 = ndarray_to_b64_png((combined_mask * 255).astype(np.uint8))
+    The entire memory-intensive lifecycle (preprocess, forward pass, mask
+    extraction, heatmap generation, cleanup) runs inside the inference
+    semaphore so concurrent requests serialize on a constrained instance.
+    """
+    acquired = _inference_semaphore.acquire(blocking=True)
+    if not acquired:
+        raise RuntimeError("Inference service is busy; please retry.")
 
     try:
-        heatmap_b64 = _generate_heatmap_overlay(img_array, combined_mask)
-    except Exception as e:
-        logger.warning(f"Heatmap generation failed: {e}")
+        log_memory("before preprocessing")
+        image = preprocess_image_for_inference(image)
+        log_memory("after preprocessing")
 
-    best_idx = int(boxes.conf.argmax().item())
-    primary = detections[best_idx]
-    top_severity = max(detections, key=lambda d: d["stenosis_percent"])["severity"]
-    top_percent = max(d["stenosis_percent"] for d in detections)
+        img_array = np.array(image.convert("RGB"))
+        model = get_model(model_name)
 
-    return {
-        "stenosis": True,
-        "confidence": primary["confidence"],
-        "severity": top_severity,
-        "stenosis_percent": top_percent,
-        "bbox": primary["bbox"],
-        "mask_b64": combined_mask_b64,
-        "heatmap_b64": heatmap_b64,
-        "detections": detections,
-        "model_used": model_name,
-        "processing_time": 0.0,  # filled in by the endpoint
-    }
+        log_memory("before forward pass")
+        import torch
+
+        with torch.inference_mode():
+            results = model(img_array, conf=0.25, iou=0.45, device="cpu", verbose=False, imgsz=YOLO_IMGSZ)
+        log_memory("after forward pass")
+        result = results[0]
+        boxes = result.boxes
+
+        if boxes is None or len(boxes) == 0:
+            # Release large tensors before returning.
+            del results, result, boxes, img_array
+            gc.collect()
+            return {
+                "stenosis": False,
+                "confidence": 0.0,
+                "severity": "none",
+                "stenosis_percent": 0.0,
+                "bbox": [0.0, 0.0, 0.0, 0.0],
+                "mask_b64": None,
+                "heatmap_b64": None,
+                "detections": [],
+                "model_used": model_name,
+                "processing_time": 0.0,
+            }
+
+        h, w = img_array.shape[:2]
+        combined_mask = np.zeros((h, w), dtype=np.float32)
+        detections = []
+
+        for idx, box in enumerate(boxes):
+            x1, y1, x2, y2 = [round(float(v), 1) for v in box.xyxy[0].tolist()]
+            conf = round(float(box.conf[0].item()), 3)
+            bbox = [x1, y1, x2, y2]
+
+            stenosis_pct = estimate_diameter_reduction(bbox, img_array.shape)
+            severity = classify_severity(stenosis_pct)
+
+            mask_b64 = None
+            try:
+                if result.masks is not None and len(result.masks.data) > idx:
+                    raw = result.masks.data[idx].cpu().numpy()  # float32 [H, W]
+                    mh, mw = raw.shape
+                    mask_uint8 = (raw * 255).astype(np.uint8)
+                    del raw
+                    if mh != h or mw != w:
+                        mask_pil = Image.fromarray(mask_uint8, mode="L").resize((w, h), Image.NEAREST)
+                        mask_uint8 = np.array(mask_pil)
+                    mask_b64 = ndarray_to_b64_png(mask_uint8)
+                    combined_mask = np.maximum(combined_mask, mask_uint8.astype(np.float32) / 255.0)
+                    del mask_uint8
+                    gc.collect()
+            except Exception as e:
+                logger.warning(f"Mask extraction failed for detection {idx}: {e}")
+
+            detections.append({
+                "bbox": bbox,
+                "confidence": conf,
+                "severity": severity,
+                "stenosis_percent": stenosis_pct,
+                "mask_b64": mask_b64,
+            })
+
+        log_memory("after segmentation extraction")
+
+        combined_mask = np.clip(combined_mask, 0.0, 1.0)
+        combined_mask_b64 = None
+        heatmap_b64 = None
+
+        if np.any(combined_mask > 0):
+            combined_mask_b64 = ndarray_to_b64_png((combined_mask * 255).astype(np.uint8))
+
+        try:
+            heatmap_b64 = _generate_heatmap_overlay(img_array, combined_mask)
+        except Exception as e:
+            logger.warning(f"Heatmap generation failed: {e}")
+
+        log_memory("after heatmap generation")
+
+        # Release large raw intermediates once all encoded outputs are produced.
+        # Keep combined_mask_b64 and heatmap_b64 (needed in the response).
+        del combined_mask, img_array
+        gc.collect()
+
+        best_idx = int(boxes.conf.argmax().item())
+        primary = detections[best_idx]
+        top_severity = max(detections, key=lambda d: d["stenosis_percent"])["severity"]
+        top_percent = max(d["stenosis_percent"] for d in detections)
+
+        log_memory("before returning response")
+
+        return {
+            "stenosis": True,
+            "confidence": primary["confidence"],
+            "severity": top_severity,
+            "stenosis_percent": top_percent,
+            "bbox": primary["bbox"],
+            "mask_b64": combined_mask_b64,
+            "heatmap_b64": heatmap_b64,
+            "detections": detections,
+            "model_used": model_name,
+            "processing_time": 0.0,  # filled in by the endpoint
+        }
+    finally:
+        _inference_semaphore.release()

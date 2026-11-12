@@ -15,8 +15,11 @@ BACKEND_DIR = Path(__file__).resolve().parent.parent
 MODELS_DIR = os.path.join(str(BACKEND_DIR), "models")
 
 DEFAULT_MODEL_NAME = os.getenv("DEFAULT_MODEL", "YOLOv8s-seg")
-MAX_IMAGE_SIDE = int(os.getenv("MAX_IMAGE_SIDE", "1024"))
+MAX_IMAGE_SIDE = int(os.getenv("MAX_IMAGE_SIDE", "640"))
+YOLO_IMGSZ = int(os.getenv("YOLO_IMGSZ", "640"))
 TORCH_NUM_THREADS = int(os.getenv("TORCH_NUM_THREADS", "2"))
+MAX_UPLOAD_BYTES = int(os.getenv("MAX_UPLOAD_BYTES", str(8 * 1024 * 1024)))
+MAX_CONCURRENT_INFERENCE = int(os.getenv("MAX_CONCURRENT_INFERENCE", "1"))
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
