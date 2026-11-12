@@ -5,6 +5,7 @@ dependencies or model weights are missing, so `pytest tests/` still runs fast
 and green in a bare dev environment.
 """
 
+import importlib.util
 import io
 import os
 import threading
@@ -22,6 +23,10 @@ try:
     HAS_FASTAPI = True
 except Exception:  # pragma: no cover - dependency check
     HAS_FASTAPI = False
+
+# Local inference requires PyTorch/Ultralytics; skip those tests when the ML
+# stack isn't installed (e.g. CI where inference runs on Modal).
+HAS_TORCH = importlib.util.find_spec("torch") is not None
 
 pytestmark = pytest.mark.skipif(not HAS_FASTAPI, reason="FastAPI stack not installed")
 
@@ -88,6 +93,9 @@ def test_predict_rejects_unknown_model(client):
 @pytest.mark.skipif(
     not os.path.exists(SEG_MODEL_PATH), reason="Segmentation weights not present"
 )
+@pytest.mark.skipif(
+    not HAS_TORCH, reason="PyTorch not installed; local inference requires torch"
+)
 def test_predict_default_model_runs(client):
     resp = client.post(
         "/api/predict",
@@ -145,6 +153,9 @@ class FakeModel:
 
 
 @pytest.mark.skipif(not HAS_FASTAPI, reason="FastAPI stack not installed")
+@pytest.mark.skipif(
+    not HAS_TORCH, reason="PyTorch not installed; local inference requires torch"
+)
 def test_concurrent_predictions_are_serialized(monkeypatch):
     """Concurrent inference calls must serialize under the semaphore and never
     overwrite each other's results."""

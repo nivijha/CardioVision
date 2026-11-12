@@ -80,9 +80,16 @@ def get_model(model_name: str):
     user-uploaded content), then restore the original loader.
     """
     if model_name not in _model_cache:
-        import torch
-        from ultralytics import YOLO
-        from ultralytics.nn import tasks
+        try:
+            import torch
+            from ultralytics import YOLO
+            from ultralytics.nn import tasks
+        except ImportError as exc:
+            raise FileNotFoundError(
+                "Local inference unavailable: PyTorch/Ultralytics not installed. "
+                "Set INFERENCE_PROVIDER=modal to use the Modal inference service. "
+                f"({exc})"
+            )
 
         model_path = MODEL_CONFIG[model_name]
         if not os.path.exists(model_path):
