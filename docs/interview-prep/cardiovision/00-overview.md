@@ -104,6 +104,8 @@ Frontend dev dependencies: `@types/react ^18.3.3`, `@types/react-dom ^18.3.0` (t
 
 ## 4. Repository structure — file by file
 
+The repository tree before adding this interview-prep directory contained 83 entries (64 files and 19 directories); the two generated documents add three directories and two files.
+
 ### Root
 - `README.md` — overview, feature claims, stack, local run instructions, deploy and metrics narrative.
 - `render.yaml` — Render Blueprint; backend rootDir and environment configuration.
@@ -116,6 +118,7 @@ Frontend dev dependencies: `@types/react ^18.3.3`, `@types/react-dom ^18.3.0` (t
 ### `stenosis-detection/`
 - `.gitignore` — ignores Python/Node artifacts, env files, uploads/results contents and training data/runs.
 - `METRICS.md` — provenance caveats and conflicts in displayed performance figures.
+- `vercel.json` — SPA rewrite also present at this project-subdirectory level; precedence/necessity **NOT FOUND / UNCLEAR**.
 
 #### `stenosis-detection/backend/`
 - `.dockerignore` — Docker build-context exclusions.
