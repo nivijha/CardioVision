@@ -4,7 +4,7 @@
 
 ## Counting method
 
-The recursive tree response contained 65 tracked entries including directories and files. Counts below distinguish routes/components/models from files:
+The repository tree before adding this interview-prep directory contained 83 entries (64 files and 19 directories). The two generated prep documents add three directories and two files; the current tree therefore contains 88 entries (66 files and 22 directories). The recursive API response was not truncated. Counts below distinguish routes/components/models from files:
 
 | Area | Count |
 |---|---:|
